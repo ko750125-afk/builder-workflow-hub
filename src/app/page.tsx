@@ -237,22 +237,24 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col gap-12">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-center bg-white/80 backdrop-blur-xl p-8 rounded-[3rem] border border-slate-950/[0.06] ring-1 ring-blue-600/[0.08] shadow-[0_20px_50px_-15px_rgba(0,0,0,0.05)] gap-6 mb-4 relative overflow-hidden transition-all duration-500">
+      <div className="flex flex-col xl:flex-row justify-between items-center bg-white/80 backdrop-blur-xl p-8 rounded-[3rem] border border-slate-950/[0.06] shadow-sm gap-6 mb-4 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px] -mr-32 -mt-32" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-amber-500/5 rounded-full blur-[60px] -ml-24 -mb-24" />
-        <div className="flex flex-col md:flex-row items-center gap-1.5 px-2 relative z-10 w-full justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-3xl font-black font-outfit text-slate-950 tracking-tighter uppercase italic">DASHBOARD</h1>
-            <Link 
-              href="/tips"
-              className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-2xl hover:bg-blue-100 transition-all font-black text-xs border border-blue-100 shadow-sm"
-            >
-              <Lightbulb size={16} fill="currentColor" />
-              <span>개발팁</span>
-            </Link>
-          </div>
+        
+        {/* Title & Link (Left) */}
+        <div className="flex items-center gap-4 relative z-10 w-full xl:w-auto">
+          <h1 className="text-3xl font-black font-outfit text-slate-950 tracking-tighter uppercase italic">DASHBOARD</h1>
+          <Link 
+            href="/tips"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-2xl hover:bg-blue-100 transition-all font-black text-xs border border-blue-100 shadow-sm"
+          >
+            <Lightbulb size={16} fill="currentColor" />
+            <span>개발팁</span>
+          </Link>
         </div>
-        <div className="flex gap-4 flex-wrap md:flex-nowrap relative z-10">
+        
+        {/* Action Buttons (Right) */}
+        <div className="flex gap-4 flex-wrap md:flex-nowrap relative z-10 w-full xl:w-auto">
           {/* 동기화 버튼 (Basic/Blue) */}
           <button 
             id="vercel-batch-sync-button"

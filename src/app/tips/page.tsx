@@ -28,6 +28,74 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+const TipCard = ({ tip, onDelete, onSave }: { tip: DevTip, onDelete: (id: string, e: React.MouseEvent) => void, onSave: (id: string, updates: Partial<DevTip>) => Promise<void> }) => {
+  const [title, setTitle] = useState(tip.title);
+  const [content, setContent] = useState(tip.content);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Sync state if tip changes externally
+  useEffect(() => {
+    setTitle(tip.title);
+    setContent(tip.content);
+  }, [tip.title, tip.content]);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    await onSave(tip.id, { title, content });
+    setIsSaving(false);
+  };
+
+  return (
+    <div className="group p-8 rounded-[2.5rem] border bg-white transition-all relative overflow-hidden border-slate-100 hover:border-blue-200 hover:shadow-2xl hover:shadow-blue-500/5 flex flex-col h-full">
+      <div className="flex flex-col gap-5 flex-1">
+        <div className="flex items-start justify-between">
+          <input 
+            type="text" 
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onFocus={(e) => { if (e.target.value === '새로운 팁') setTitle(''); }}
+            onBlur={(e) => { if (e.target.value === '') setTitle('새로운 팁'); }}
+            placeholder="제목 없음"
+            className="w-full text-lg font-black font-outfit bg-transparent border-none outline-none focus:ring-0 text-slate-900 placeholder:text-slate-200 uppercase italic tracking-tight"
+          />
+          <button 
+            onClick={(e) => onDelete(tip.id, e)}
+            className="p-2.5 bg-rose-50 text-rose-500 rounded-xl opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-100 shadow-sm flex-shrink-0 ml-2"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
+        
+        <textarea 
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="여기에 상세 내용을 입력하세요..."
+          className="w-full flex-1 bg-slate-50/50 hover:bg-slate-50/80 rounded-2xl p-6 text-sm text-slate-700 font-medium leading-relaxed outline-none border border-transparent focus:border-blue-100 focus:bg-white transition-all resize-none min-h-[150px] custom-scrollbar"
+        />
+        
+        <div className="flex items-center justify-between px-2 pt-2 mt-auto">
+           <button
+             onClick={handleSave}
+             disabled={isSaving || (title === tip.title && content === tip.content)}
+             className={cn(
+               "flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black tracking-widest uppercase transition-all shadow-sm",
+               isSaving ? "bg-slate-100 text-slate-400" : 
+               (title !== tip.title || content !== tip.content) ? "bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200 shadow-md" : 
+               "bg-slate-100 text-slate-400 border border-slate-200/60"
+             )}
+           >
+             {isSaving ? <div className="w-3 h-3 border-2 border-slate-300 border-t-slate-500 rounded-full animate-spin" /> : <Save size={12} />}
+             {isSaving ? "저장 중..." : "저장"}
+           </button>
+           <span className="text-[9px] text-slate-300 font-bold uppercase tracking-widest">
+             {tip.updatedAt?.toDate?.()?.toLocaleDateString() || "Recently Edited"}
+           </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function TipsPage() {
   const { user, loading: authLoading } = useAuth();
   const [categories, setCategories] = useState<TipCategory[]>([]);
@@ -36,6 +104,7 @@ export default function TipsPage() {
   const [selectedTip, setSelectedTip] = useState<DevTip | null>(null);
   
   const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [isAddingTip, setIsAddingTip] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
 
   // Initialize and Fetch Categories
@@ -60,6 +129,9 @@ export default function TipsPage() {
   useEffect(() => {
     if (!user || !selectedCategoryId) return;
 
+    // Immediately clear tips to prevent lingering data from the previous category
+    setTips([]);
+
     const unsub = subscribeToTips(user.uid, selectedCategoryId, (data) => {
       setTips(data);
     });
@@ -79,16 +151,19 @@ export default function TipsPage() {
 
   const handleAddTip = async () => {
     if (!selectedCategoryId || !user) return;
+    setIsAddingTip(true);
     try {
       await addTip(selectedCategoryId, user.uid);
     } catch (error) {
       console.error("Failed to add tip:", error);
+    } finally {
+      setIsAddingTip(false);
     }
   };
 
-  const handleUpdateTipContent = async (id: string, field: keyof DevTip, value: string) => {
+  const handleUpdateTipContent = async (id: string, updates: Partial<DevTip>) => {
     try {
-      await updateTip(id, { [field]: value });
+      await updateTip(id, updates);
     } catch (error) {
       console.error("Failed to update tip:", error);
     }
@@ -173,16 +248,16 @@ export default function TipsPage() {
                     setSelectedCategoryId(cat.id);
                   }}
                   className={cn(
-                    "w-full flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all font-bold text-xs text-left group",
+                    "w-full flex items-center justify-between px-5 py-4 rounded-2xl transition-all font-black text-sm text-left group",
                     selectedCategoryId === cat.id 
-                      ? "bg-blue-600 text-white shadow-lg shadow-blue-100" 
-                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                      ? "bg-blue-600 text-white shadow-lg shadow-blue-100 scale-[1.02]" 
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-transparent hover:border-slate-100"
                   )}
                 >
                   <div className="flex items-center gap-3">
                     <div className={cn(
-                      "w-1.5 h-1.5 rounded-full",
-                      selectedCategoryId === cat.id ? "bg-white animate-pulse" : "bg-slate-200"
+                      "w-2 h-2 rounded-full",
+                      selectedCategoryId === cat.id ? "bg-white animate-pulse" : "bg-slate-300 group-hover:bg-slate-400"
                     )} />
                     <span className="capitalize">{cat.name}</span>
                   </div>
@@ -204,10 +279,15 @@ export default function TipsPage() {
               </div>
               <button 
                 onClick={handleAddTip}
-                disabled={!selectedCategoryId}
+                disabled={!selectedCategoryId || isAddingTip}
                 className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl text-xs font-black hover:bg-blue-700 transition-all disabled:opacity-50 shadow-lg shadow-blue-200 active:scale-95"
               >
-                <Plus size={16} strokeWidth={3} /> 새로운 팁 추가
+                {isAddingTip ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Plus size={16} strokeWidth={3} /> 
+                )}
+                새로운 팁 추가
               </button>
             </div>
 
@@ -220,44 +300,12 @@ export default function TipsPage() {
                   </div>
                 ) : (
                   tips.map((tip) => (
-                    <div
-                      key={tip.id}
-                      className="group p-8 rounded-[2.5rem] border bg-white transition-all relative overflow-hidden border-slate-100 hover:border-blue-200 hover:shadow-2xl hover:shadow-blue-500/5"
-                    >
-                      <div className="flex flex-col gap-5">
-                        <div className="flex items-start justify-between">
-                          <input 
-                            type="text" 
-                            defaultValue={tip.title}
-                            placeholder="제목 없음"
-                            onBlur={(e) => handleUpdateTipContent(tip.id, 'title', e.target.value)}
-                            className="w-full text-lg font-black font-outfit bg-transparent border-none outline-none focus:ring-0 text-slate-900 placeholder:text-slate-200 uppercase italic tracking-tight"
-                          />
-                          <button 
-                            onClick={(e) => handleDeleteTip(tip.id, e)}
-                            className="p-2.5 bg-rose-50 text-rose-500 rounded-xl opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-100 shadow-sm"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                        
-                        <textarea 
-                          defaultValue={tip.content}
-                          placeholder="여기에 상세 내용을 입력하세요..."
-                          onBlur={(e) => handleUpdateTipContent(tip.id, 'content', e.target.value)}
-                          className="w-full bg-slate-50/50 rounded-2xl p-6 text-sm text-slate-600 font-medium leading-relaxed outline-none border border-transparent focus:border-blue-100 focus:bg-white transition-all resize-none min-h-[150px] custom-scrollbar"
-                        />
-                        
-                        <div className="flex items-center justify-between px-2 pt-2">
-                           <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-black tracking-widest uppercase shadow-sm">
-                             <Save size={10} /> Auto Saving
-                           </div>
-                           <span className="text-[9px] text-slate-300 font-bold uppercase tracking-widest">
-                             {tip.updatedAt?.toDate?.()?.toLocaleDateString() || "Recently Edited"}
-                           </span>
-                        </div>
-                      </div>
-                    </div>
+                    <TipCard 
+                      key={tip.id} 
+                      tip={tip} 
+                      onDelete={handleDeleteTip} 
+                      onSave={handleUpdateTipContent} 
+                    />
                   ))
                 )}
               </div>
