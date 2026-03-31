@@ -49,9 +49,10 @@ export const initializeDefaultCategories = async (uid: string) => {
 
 export const subscribeToCategories = (uid: string | null, callback: (categories: TipCategory[]) => void) => {
   if (!uid) return () => {};
-  const q = query(collection(db, CATEGORIES_COLLECTION), where("uid", "==", uid), orderBy("order", "asc"));
+  const q = query(collection(db, CATEGORIES_COLLECTION), where("uid", "==", uid));
   return onSnapshot(q, (snapshot) => {
-    const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TipCategory));
+    let list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TipCategory));
+    list = list.sort((a, b) => (a.order || 0) - (b.order || 0));
     callback(list);
   });
 };
@@ -98,11 +99,15 @@ export const subscribeToTips = (uid: string | null, categoryId: string, callback
   const q = query(
     collection(db, TIPS_COLLECTION), 
     where("uid", "==", uid), 
-    where("categoryId", "==", categoryId),
-    orderBy("createdAt", "desc")
+    where("categoryId", "==", categoryId)
   );
   return onSnapshot(q, (snapshot) => {
-    const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DevTip));
+    let list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DevTip));
+    list = list.sort((a, b) => {
+      const timeA = a.createdAt?.toMillis?.() || 0;
+      const timeB = b.createdAt?.toMillis?.() || 0;
+      return timeB - timeA;
+    });
     callback(list);
   });
 };
