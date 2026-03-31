@@ -52,6 +52,9 @@ const TipEditor = ({ categoryId, tip, uid, onAddTip, onUpdateTip }: { categoryId
   }, [tip?.id, tip?.content]);
 
   const execCommand = (command: string, value: string = "") => {
+    if (editorRef.current) {
+      editorRef.current.focus();
+    }
     document.execCommand(command, false, value);
     if (editorRef.current) {
       setContent(editorRef.current.innerHTML);
@@ -400,9 +403,6 @@ export default function TipsPage() {
                       )} />
                       <span className="capitalize truncate block w-full">{cat.name}</span>
                     </div>
-                    {cat.isPinned && (
-                      <Star size={12} className={cn("absolute right-4 top-1/2 -translate-y-1/2", selectedCategoryId === cat.id ? "text-white fill-white" : "text-amber-500 fill-amber-500")} />
-                    )}
                   </button>
                   
                   <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col justify-center items-center w-8 z-20">
@@ -486,6 +486,7 @@ export default function TipsPage() {
             <div className="flex-1 overflow-hidden flex pl-1">
               {selectedCategoryId ? (
                 <TipEditor 
+                  key={tips[0]?.id || selectedCategoryId}
                   categoryId={selectedCategoryId} 
                   tip={tips[0] || null} 
                   uid={user.uid} 
