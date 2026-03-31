@@ -246,10 +246,10 @@ export default function Dashboard() {
           <h1 className="text-3xl font-black font-outfit text-slate-950 tracking-tighter uppercase italic">DASHBOARD</h1>
           <Link 
             href="/tips"
-            className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-2xl hover:bg-blue-100 transition-all font-black text-xs border border-blue-100 shadow-sm"
+            title="개발팁"
+            className="flex items-center justify-center w-12 h-12 bg-amber-50 text-amber-600 rounded-full hover:bg-amber-100 hover:text-amber-700 transition-all border border-amber-200 shadow-sm"
           >
-            <Lightbulb size={16} fill="currentColor" />
-            <span>개발팁</span>
+            <Lightbulb size={20} fill="currentColor" />
           </Link>
         </div>
         

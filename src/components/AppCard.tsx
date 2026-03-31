@@ -102,37 +102,37 @@ export default function AppCard({ app }: AppCardProps) {
         "hover:shadow-slate-500/10"
       )}
     >
-      <div className="flex justify-between items-start">
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <h3 className="text-lg font-bold font-outfit text-slate-900 group-hover:text-blue-600 transition-colors tracking-tight line-clamp-1">
-              {app.name}
-            </h3>
-            <span className={cn(
-              "status-badge shadow-sm border-slate-950/[0.04] text-[10px] py-1 px-2.5",
-              status.color
-            )}>
-              {status.icon}
-              {status.label}
-            </span>
-          </div>
+      <div className="flex justify-between items-start gap-4">
+        <div className="flex flex-col gap-3 flex-1 min-w-0">
+          <h3 className="text-lg font-bold font-outfit text-slate-900 group-hover:text-blue-600 transition-colors tracking-tight line-clamp-1">
+            {app.name}
+          </h3>
           <p className="text-[13px] text-slate-500 line-clamp-2 leading-relaxed h-9">
             {app.description || "등록된 앱 설명이 없습니다."}
           </p>
         </div>
 
-        <button
-          onClick={handleTogglePin}
-          className={cn(
-            "p-2 rounded-xl transition-all duration-300",
-            app.isPinned 
-              ? "bg-blue-600 text-white shadow-lg shadow-blue-200 scale-110" 
-              : "bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600"
-          )}
-          title={app.isPinned ? "고정 해제" : "상단 고정"}
-        >
-          <Pin size={16} fill={app.isPinned ? "currentColor" : "none"} className={cn(app.isPinned ? "" : "rotate-45")} />
-        </button>
+        <div className="flex items-center gap-4 flex-shrink-0">
+          <span className={cn(
+            "status-badge shadow-sm border-slate-950/[0.04] text-[10px] py-1 px-2.5",
+            status.color
+          )}>
+            {status.icon}
+            {status.label}
+          </span>
+          <button
+            onClick={handleTogglePin}
+            className={cn(
+              "p-2 rounded-xl transition-all duration-300",
+              app.isPinned 
+                ? "bg-blue-600 text-white shadow-lg shadow-blue-200 scale-110" 
+                : "bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600"
+            )}
+            title={app.isPinned ? "고정 해제" : "상단 고정"}
+          >
+            <Pin size={16} fill={app.isPinned ? "currentColor" : "none"} className={cn(app.isPinned ? "" : "rotate-45")} />
+          </button>
+        </div>
       </div>
 
       <div className={cn(
