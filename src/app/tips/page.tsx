@@ -12,7 +12,8 @@ import {
   Star,
   Bold,
   Type,
-  Palette
+  Palette,
+  Underline
 } from 'lucide-react';
 import { 
   subscribeToCategories, 
@@ -120,7 +121,7 @@ const TipEditor = ({ categoryId, tip, uid, onAddTip, onUpdateTip }: { categoryId
               {['transparent', '#fef9c3', '#dcfce7', '#dbeafe', '#f3e8ff', '#fee2e2'].map(color => (
                 <button
                   key={color}
-                  onClick={() => execCommand('hiliteColor', color)}
+                  onClick={() => execCommand('backColor', color)}
                   className="w-6 h-6 rounded-lg pointer cursor-pointer border border-slate-100 hover:scale-110 transition-transform shadow-sm flex items-center justify-center"
                   style={{ backgroundColor: color }}
                 >
@@ -129,6 +130,14 @@ const TipEditor = ({ categoryId, tip, uid, onAddTip, onUpdateTip }: { categoryId
               ))}
             </div>
           </div>
+
+          <button 
+            onClick={() => execCommand('underline')}
+            className="p-2 hover:bg-white rounded-xl text-slate-500 hover:text-slate-900 transition-all hover:shadow-sm"
+            title="밑줄"
+          >
+            <Underline size={18} />
+          </button>
 
           <div className="w-[1px] h-6 bg-slate-100 mx-1" />
           
@@ -160,8 +169,10 @@ const TipEditor = ({ categoryId, tip, uid, onAddTip, onUpdateTip }: { categoryId
       <div 
         ref={editorRef}
         contentEditable
+        spellCheck="false"
         onInput={handleInput}
-        className="w-full flex-1 bg-transparent p-8 text-base text-slate-700 font-medium leading-[2.2] outline-none overflow-y-auto custom-scrollbar min-h-[300px]"
+        className="w-full flex-1 bg-transparent p-8 text-base text-slate-950 font-medium leading-[2.2] outline-none overflow-y-auto custom-scrollbar min-h-[300px]"
+        style={{ caretColor: '#1d4ed8' }} // Blue 700 caret for visibility
       />
       
       <div className="flex items-center justify-between p-4 px-8 border-t border-slate-100/80 bg-white/20">
@@ -361,25 +372,25 @@ export default function TipsPage() {
                       setDeleteConfirmId(null);
                     }}
                     className={cn(
-                      "flex-1 flex items-center justify-between px-5 py-4 rounded-2xl transition-all font-black text-sm text-left group gap-2",
+                      "flex-1 flex items-center justify-between pl-4 pr-12 py-4 rounded-2xl transition-all font-black text-sm text-left group gap-2 min-w-0 relative",
                       selectedCategoryId === cat.id 
                         ? "bg-blue-600 text-white shadow-lg shadow-blue-100 scale-[1.02] z-10" 
                         : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-transparent hover:border-slate-100"
                     )}
                   >
-                    <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="flex items-center gap-3 overflow-hidden min-w-0">
                       <div className={cn(
                         "w-2 h-2 flex-shrink-0 rounded-full",
                         selectedCategoryId === cat.id ? "bg-white animate-pulse" : "bg-slate-300 group-hover:bg-slate-400"
                       )} />
-                      <span className="capitalize truncate">{cat.name}</span>
+                      <span className="capitalize truncate block w-full">{cat.name}</span>
                     </div>
                     {cat.isPinned && (
-                      <Star size={12} className={cn("shrink-0", selectedCategoryId === cat.id ? "text-white fill-white" : "text-amber-500 fill-amber-500")} />
+                      <Star size={12} className={cn("absolute right-4 top-1/2 -translate-y-1/2", selectedCategoryId === cat.id ? "text-white fill-white" : "text-amber-500 fill-amber-500")} />
                     )}
                   </button>
                   
-                  <div className="flex flex-col justify-center items-center w-8 flex-shrink-0">
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col justify-center items-center w-8 z-20">
                     {deleteConfirmId === cat.id ? (
                       <div className="flex flex-col items-center gap-1 z-20 bg-white p-1 rounded-lg">
                         <button 
