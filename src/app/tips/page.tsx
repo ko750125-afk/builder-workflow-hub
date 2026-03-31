@@ -90,6 +90,7 @@ export default function TipsPage() {
   const [tips, setTips] = useState<DevTip[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedTip, setSelectedTip] = useState<DevTip | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -136,15 +137,14 @@ export default function TipsPage() {
     }
   };
 
-  const handleDeleteCategory = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleDeleteCategory = async (id: string) => {
     try {
-      if (!confirm("이 카테고리를 정말 삭제할까요?")) return;
       await deleteCategory(id);
       if (selectedCategoryId === id) {
         setSelectedCategoryId(null);
         setTips([]);
       }
+      setDeleteConfirmId(null);
     } catch (error) {
       console.error("Failed to delete category:", error);
     }
@@ -192,10 +192,13 @@ export default function TipsPage() {
       </div>
 
       {/* Main Content Area: 2 Columns Layout */}
-      <div className="flex-1 flex gap-6 overflow-hidden">
+      <div className="flex-1 flex flex-col md:flex-row gap-6 overflow-hidden">
         
         {/* Left Sidebar: Categories (Box 1) */}
-        <div className="w-56 flex flex-col gap-4 flex-shrink-0">
+        <div className={cn(
+          "w-full md:w-56 flex-col gap-4 flex-shrink-0 h-full",
+          selectedCategoryId ? "hidden md:flex" : "flex"
+        )}>
           <div className="bg-white/90 backdrop-blur-md rounded-[2.5rem] border border-slate-950/[0.06] p-6 flex flex-col gap-6 shadow-sm overflow-hidden h-full">
             <div className="flex items-center justify-between px-2">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Categories</span>
@@ -233,6 +236,7 @@ export default function TipsPage() {
                   <button
                     onClick={() => {
                       setSelectedCategoryId(cat.id);
+                      setDeleteConfirmId(null);
                     }}
                     className={cn(
                       "w-full flex items-center justify-between px-5 py-4 rounded-2xl transition-all font-black text-sm text-left group",
@@ -249,17 +253,34 @@ export default function TipsPage() {
                       <span className="capitalize truncate">{cat.name}</span>
                     </div>
                   </button>
-                  <button 
-                    onClick={(e) => handleDeleteCategory(cat.id, e)}
-                    className={cn(
-                      "absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all z-20",
-                      selectedCategoryId === cat.id 
-                        ? "text-blue-200 hover:text-white hover:bg-blue-700 opacity-80" 
-                        : "text-slate-300 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover/cat:opacity-100"
-                    )}
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  {deleteConfirmId === cat.id ? (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 z-20 bg-white/90 p-1 rounded-lg shadow-sm border border-red-100 animate-in fade-in duration-200">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat.id); }} 
+                        className="p-1 px-2 text-[10px] font-bold text-white bg-red-500 rounded hover:bg-red-600 transition-colors"
+                      >
+                        삭제
+                      </button>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(null); }} 
+                        className="p-1 px-2 text-[10px] font-bold text-slate-500 bg-slate-100 rounded hover:bg-slate-200 transition-colors"
+                      >
+                        취소
+                      </button>
+                    </div>
+                  ) : (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(cat.id); }}
+                      className={cn(
+                        "absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all z-20",
+                        selectedCategoryId === cat.id 
+                          ? "text-blue-200 hover:text-white hover:bg-blue-700 opacity-100 md:opacity-80" 
+                          : "text-slate-300 hover:text-red-500 hover:bg-red-50 opacity-100 md:opacity-0 md:group-hover/cat:opacity-100"
+                      )}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -267,14 +288,26 @@ export default function TipsPage() {
         </div>
 
         {/* Right Content Area: Tips List with Content (Box 2) */}
-        <div className="flex-1 flex flex-col gap-4 overflow-hidden">
-          <div className="bg-white/95 backdrop-blur-md rounded-[3rem] border border-slate-950/[0.06] p-10 flex flex-col gap-8 shadow-sm overflow-hidden h-full">
-            <div className="flex items-center justify-between px-4 pb-2 border-b border-slate-50">
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Developer Knowledge Base</span>
-                <h2 className="text-xl font-black font-outfit uppercase tracking-tighter italic text-slate-950">
-                  {categories.find(c => c.id === selectedCategoryId)?.name || "정보를 선택하세요"}
-                </h2>
+        <div className={cn(
+          "flex-1 flex-col gap-4 overflow-hidden h-full",
+          !selectedCategoryId ? "hidden md:flex" : "flex"
+        )}>
+          <div className="bg-white/95 backdrop-blur-md rounded-[3rem] border border-slate-950/[0.06] p-6 md:p-10 flex flex-col gap-8 shadow-sm overflow-hidden h-full">
+            <div className="flex items-center justify-between px-2 md:px-4 pb-2 border-b border-slate-50">
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => setSelectedCategoryId(null)}
+                  className="md:hidden p-2 -ml-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-colors"
+                >
+                  <ChevronLeft size={24} />
+                </button>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest hidden md:block">Developer Knowledge Base</span>
+                  <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest md:hidden">Knowledge Base</span>
+                  <h2 className="text-xl font-black font-outfit uppercase tracking-tighter italic text-slate-950 truncate max-w-[200px] md:max-w-none">
+                    {categories.find(c => c.id === selectedCategoryId)?.name || "정보를 선택하세요"}
+                  </h2>
+                </div>
               </div>
             </div>
 
