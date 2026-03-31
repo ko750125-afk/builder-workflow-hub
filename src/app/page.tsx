@@ -253,46 +253,37 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="flex gap-4 flex-wrap md:flex-nowrap relative z-10">
+          {/* 동기화 버튼 (Basic/Blue) */}
           <button 
             id="vercel-batch-sync-button"
             onClick={handleBatchSyncVercel}
             disabled={isSyncing}
-            className="flex items-center justify-center gap-2 px-6 py-4 bg-white/60 text-slate-900 rounded-2xl hover:bg-white transition-all font-bold text-xs disabled:opacity-50 border border-slate-950/[0.08] shadow-sm active:scale-95 ring-1 ring-slate-950/[0.05] backdrop-blur-sm"
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all font-bold text-sm disabled:opacity-50 shadow-lg shadow-blue-200 active:scale-95"
             title="Vercel API를 통해 모든 앱의 깃허브 저장소를 한 번에 찾아옵니다"
           >
             {isSyncing ? (
-              <div className="w-4 h-4 border-2 border-slate-900/30 border-t-slate-900 rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
-              <Globe size={18} strokeWidth={2.5} className="text-blue-600" />
+              <Globe size={20} strokeWidth={2.5} />
             )}
-            <span>Vercel 동기화</span>
+            <span>동기화</span>
           </button>
+
+          {/* 나의 스킬 버튼 (Orange) */}
           <Link 
             href="/skills"
-            className="flex items-center justify-center gap-2 px-6 py-4 bg-amber-50/80 text-amber-800 rounded-2xl hover:bg-amber-100/90 border border-amber-200/50 transition-all font-bold text-xs active:scale-95 shadow-sm ring-1 ring-amber-500/10 backdrop-blur-sm"
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-4 bg-orange-500 text-white rounded-2xl hover:bg-orange-600 transition-all font-bold text-sm active:scale-95 shadow-lg shadow-orange-200"
           >
-            <Zap size={18} fill="currentColor" />
+            <Zap size={20} fill="currentColor" />
             <span>나의 스킬</span>
           </Link>
-          <button 
-            onClick={() => handleCreateWithStatus('idea')}
-            className="flex items-center justify-center gap-2 px-6 py-3.5 bg-amber-500 text-white rounded-2xl hover:bg-amber-600 transition-all font-bold text-xs active:scale-95 shadow-lg shadow-amber-200"
-          >
-            <Plus size={18} strokeWidth={3} />
-            <span>아이디어 추가</span>
-          </button>
-          <Link 
-            href="/tips"
-            className="flex items-center justify-center gap-2 px-6 py-3.5 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all font-bold text-xs active:scale-95 shadow-lg shadow-blue-200"
-          >
-            <Lightbulb size={18} fill="currentColor" />
-            <span>개발팁</span>
-          </Link>
+
+          {/* 새 앱 추가 버튼 (Purple) */}
           <button 
             onClick={() => handleCreateWithStatus('active')}
-            className="flex items-center justify-center gap-2 btn-primary px-8 py-3.5 text-sm active:scale-95 shadow-blue-500/30"
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-4 bg-purple-600 text-white rounded-2xl hover:bg-purple-700 transition-all font-bold text-sm active:scale-95 shadow-lg shadow-purple-200"
           >
-            <Plus size={20} strokeWidth={3} />
+            <Plus size={22} strokeWidth={3} />
             <span>새 앱 추가</span>
           </button>
         </div>
