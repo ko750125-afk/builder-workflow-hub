@@ -1,5 +1,5 @@
 import { db } from "../firebase";
-import { collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, where, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, query, where, serverTimestamp, writeBatch } from "firebase/firestore";
 
 export interface SkillEntry {
   id: string;
@@ -7,17 +7,19 @@ export interface SkillEntry {
   template: string;
   uid: string | null;
   isFavorite?: boolean;
+  order?: number;
   createdAt?: any;
   updatedAt?: any;
 }
 
 const SKILLS_COLLECTION = "builder_hub_skills";
 
-export const createSkill = async (title: string, template: string, uid?: string) => {
+export const createSkill = async (title: string, template: string, uid?: string, order?: number) => {
   const newSkill = {
     title,
     template,
     uid: uid || null,
+    order: order || 0,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
@@ -39,6 +41,15 @@ export const deleteSkill = async (id: string) => {
   await deleteDoc(ref);
 };
 
+export const updateSkillOrders = async (updates: { id: string, order: number }[]) => {
+  const batch = writeBatch(db);
+  updates.forEach(u => {
+    const ref = doc(db, SKILLS_COLLECTION, u.id);
+    batch.update(ref, { order: u.order });
+  });
+  await batch.commit();
+};
+
 export const subscribeToSkills = (uid: string | null, callback: (skills: SkillEntry[]) => void) => {
   let q = query(collection(db, SKILLS_COLLECTION));
   
@@ -53,6 +64,9 @@ export const subscribeToSkills = (uid: string | null, callback: (skills: SkillEn
     })) as SkillEntry[];
 
     skills.sort((a, b) => {
+      if (a.order !== undefined && b.order !== undefined) {
+        return a.order - b.order;
+      }
       const timeA = (a as any).updatedAt?.toDate?.()?.getTime() || 0;
       const timeB = (b as any).updatedAt?.toDate?.()?.getTime() || 0;
       return timeB - timeA;

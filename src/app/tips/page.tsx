@@ -10,7 +10,8 @@ import {
   addTip,
   updateTip,
   deleteTip,
-  deleteCategory
+  deleteCategory,
+  updateCategoryOrders
 } from '@/lib/db/tips';
 import { TipCategory, DevTip } from '@/types';
 import { 
@@ -19,7 +20,9 @@ import {
   Trash2, 
   Save, 
   MessageSquare, 
-  Lightbulb
+  Lightbulb,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import Link from 'next/link';
 import { clsx, type ClassValue } from 'clsx';
@@ -158,6 +161,31 @@ export default function TipsPage() {
     }
   };
 
+  const handleMoveCategory = async (index: number, direction: 'up' | 'down') => {
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === categories.length - 1) return;
+
+    const newCategories = [...categories];
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    
+    // swap
+    const temp = newCategories[index];
+    newCategories[index] = newCategories[newIndex];
+    newCategories[newIndex] = temp;
+
+    // Optimistically update local state by assigning new order
+    newCategories.forEach((cat, i) => {
+      cat.order = i;
+    });
+    setCategories(newCategories);
+
+    try {
+      await updateCategoryOrders(newCategories.map((c, i) => ({ id: c.id, order: i })));
+    } catch (error) {
+      console.error("Failed to move category:", error);
+    }
+  };
+
 
 
   if (authLoading) return (
@@ -231,7 +259,7 @@ export default function TipsPage() {
             )}
 
             <div className="flex-1 overflow-y-auto flex flex-col gap-1 pr-2 custom-scrollbar">
-              {categories.map((cat) => (
+              {categories.map((cat, index) => (
                 <div key={cat.id} className="relative group/cat">
                   <button
                     onClick={() => {
@@ -269,17 +297,46 @@ export default function TipsPage() {
                       </button>
                     </div>
                   ) : (
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(cat.id); }}
-                      className={cn(
-                        "absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all z-20",
-                        selectedCategoryId === cat.id 
-                          ? "text-blue-200 hover:text-white hover:bg-blue-700 opacity-100 md:opacity-80" 
-                          : "text-slate-300 hover:text-red-500 hover:bg-red-50 opacity-100 md:opacity-0 md:group-hover/cat:opacity-100"
+                    <div className={cn(
+                      "absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-0.5 transition-all z-20",
+                      selectedCategoryId === cat.id 
+                        ? "opacity-100 md:opacity-80" 
+                        : "opacity-100 md:opacity-0 md:group-hover/cat:opacity-100"
+                    )}>
+                      {index > 0 && (
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleMoveCategory(index, 'up'); }}
+                          className={cn(
+                            "p-1.5 rounded-lg transition-all",
+                            selectedCategoryId === cat.id ? "text-blue-200 hover:text-white hover:bg-blue-700" : "text-slate-300 hover:text-slate-600 hover:bg-slate-100"
+                          )}
+                        >
+                          <ArrowUp size={14} />
+                        </button>
                       )}
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                      {index < categories.length - 1 && (
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleMoveCategory(index, 'down'); }}
+                          className={cn(
+                            "p-1.5 rounded-lg transition-all",
+                            selectedCategoryId === cat.id ? "text-blue-200 hover:text-white hover:bg-blue-700" : "text-slate-300 hover:text-slate-600 hover:bg-slate-100"
+                          )}
+                        >
+                          <ArrowDown size={14} />
+                        </button>
+                      )}
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(cat.id); }}
+                        className={cn(
+                          "p-1.5 rounded-lg transition-all ml-1",
+                          selectedCategoryId === cat.id 
+                            ? "text-blue-200 hover:text-white hover:bg-blue-700" 
+                            : "text-slate-300 hover:text-red-500 hover:bg-red-50"
+                        )}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   )}
                 </div>
               ))}

@@ -72,6 +72,15 @@ export const deleteCategory = async (id: string) => {
   await deleteDoc(ref);
 };
 
+export const updateCategoryOrders = async (updates: { id: string, order: number }[]) => {
+  const batch = writeBatch(db);
+  updates.forEach(u => {
+    const ref = doc(db, CATEGORIES_COLLECTION, u.id);
+    batch.update(ref, { order: u.order });
+  });
+  await batch.commit();
+};
+
 // --- Tips ---
 
 export const addTip = async (categoryId: string, uid: string, title: string = "새로운 팁", content: string = "") => {

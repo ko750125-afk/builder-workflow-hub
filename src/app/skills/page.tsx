@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { SkillEntry, subscribeToSkills, createSkill, updateSkill, deleteSkill } from '@/lib/db/skills';
+import { SkillEntry, subscribeToSkills, createSkill, updateSkill, deleteSkill, updateSkillOrders } from '@/lib/db/skills';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Save, Trash2, Copy, Zap, Check, Star } from 'lucide-react';
+import { ArrowLeft, Plus, Save, Trash2, Copy, Zap, Check, Star, ArrowUp, ArrowDown } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -38,8 +38,9 @@ export default function SkillsPage() {
 
   const sortedSkills = useMemo(() => {
     return [...skills].sort((a, b) => {
-      if (a.isFavorite && !b.isFavorite) return -1;
-      if (!a.isFavorite && b.isFavorite) return 1;
+      if (a.order !== undefined && b.order !== undefined) {
+        return a.order - b.order;
+      }
       return a.title.localeCompare(b.title, 'ko-KR', { sensitivity: 'base' });
     });
   }, [skills]);
@@ -104,6 +105,32 @@ export default function SkillsPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleMoveSkill = async (index: number, direction: 'up' | 'down') => {
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === sortedSkills.length - 1) return;
+
+    const newSorted = [...sortedSkills];
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    
+    // swap
+    const temp = newSorted[index];
+    newSorted[index] = newSorted[newIndex];
+    newSorted[newIndex] = temp;
+
+    const updates = newSorted.map((skill, i) => ({ id: skill.id, order: i }));
+    
+    setSkills(prev => prev.map(p => {
+      const match = updates.find(u => u.id === p.id);
+      return match ? { ...p, order: match.order, isFavorite: false } : p;
+    }));
+
+    try {
+      await updateSkillOrders(updates);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   if (authLoading) return (
     <div className="flex items-center justify-center py-40">
       <div className="w-12 h-12 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin shadow-sm" />
@@ -145,9 +172,9 @@ export default function SkillsPage() {
               </div>
             )}
             <div className="flex flex-col gap-3">
-              {sortedSkills.map((skill: SkillEntry) => (
-                <button
-                  key={skill.id}
+              {sortedSkills.map((skill: SkillEntry, index: number) => (
+                <div key={skill.id} className="relative group/skill flex">
+                  <button
                   onClick={() => handleSelect(skill)}
                   className={cn(
                     "w-full text-left p-5 rounded-[1.5rem] border transition-all duration-300 group flex items-center justify-between active:scale-95 mb-0.5 relative overflow-hidden",
@@ -168,6 +195,27 @@ export default function SkillsPage() {
                     </div>
                   )}
                 </button>
+                {selectedSkillId !== skill.id && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-0 group-hover/skill:opacity-100 transition-opacity z-20">
+                    {index > 0 && (
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleMoveSkill(index, 'up'); }}
+                        className="p-1.5 rounded-lg text-slate-300 hover:text-slate-600 hover:bg-white"
+                      >
+                        <ArrowUp size={14} />
+                      </button>
+                    )}
+                    {index < sortedSkills.length - 1 && (
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleMoveSkill(index, 'down'); }}
+                        className="p-1.5 rounded-lg text-slate-300 hover:text-slate-600 hover:bg-white"
+                      >
+                        <ArrowDown size={14} />
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
               ))}
             </div>
           </div>
