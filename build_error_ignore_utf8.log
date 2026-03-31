@@ -1,0 +1,50 @@
+﻿
+> builder-workflow-hub@0.1.0 build
+> next build
+
+  ??Next.js 14.2.14
+
+   Creating an optimized production build ...
+node.exe : Failed to co
+mpile.
+위치 줄:1 문자:1
++ & "C:\Program Files\n
+odejs/node.exe" "C:\Pro
+gram Files\nodejs/node_
+mo ...
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (Failed to com   
+ pile.:String) [],     
+RemoteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+
+Error: EISDIR: illegal 
+operation on a director
+y, readlink 'D:\1000_An
+tigravity Projects\100_
+Websites\hub\node_modul
+es\next\dist\pages\_app
+.js'
+
+uncaughtException [Erro
+r: EPERM: operation not
+ permitted, open 'D:\10
+00_Antigravity Projects
+\100_Websites\hub\.next
+\trace'] {
+  errno: -4048,
+  code: 'EPERM',
+  syscall: 'open',
+  path: 'D:\\1000_Antig
+ravity Projects\\100_We
+bsites\\hub\\.next\\tra
+ce'
+}

@@ -1,0 +1,56 @@
+﻿
+> builder-workflow-hub@0.1.0 build
+> next build
+
+  ??Next.js 14.2.14
+
+   Creating an optimized production build ...
+node.exe : 
+위치 줄:1 문자:1
++ & "C:\Program Files\nodej
+s/node.exe" "C:\Program Fil
+es\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
+    + CategoryInfo         
+     : NotSpecified: (:St  
+  ring) [], RemoteExcept   
+ ion
+    + FullyQualifiedErrorI 
+   d : NativeCommandError
+ 
+> Build error occurred
+Error: The packages specifi
+ed in the 'transpilePackage
+s' conflict with the 'serve
+rComponentsExternalPackages
+': undici
+    at getBaseWebpackConfig
+ (D:\1000_Antigravity Proje
+cts\100_Websites\hub\node_m
+odules\next\dist\build\webp
+ack-config.js:640:19)
+    at D:\1000_Antigravity 
+Projects\100_Websites\hub\n
+ode_modules\next\dist\build
+\webpack-build\impl.js:151:
+40
+    at async Span.traceAsyn
+cFn (D:\1000_Antigravity Pr
+ojects\100_Websites\hub\nod
+e_modules\next\dist\trace\t
+race.js:154:20)
+    at async webpackBuildIm
+pl (D:\1000_Antigravity Pro
+jects\100_Websites\hub\node
+_modules\next\dist\build\we
+bpack-build\impl.js:136:21)
+    at async Object.workerM
+ain (D:\1000_Antigravity Pr
+ojects\100_Websites\hub\nod
+e_modules\next\dist\build\w
+ebpack-build\impl.js:330:20
+) {
+  type: 'Error'
+}
