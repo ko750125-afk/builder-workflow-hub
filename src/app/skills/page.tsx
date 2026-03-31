@@ -52,13 +52,6 @@ export default function SkillsPage() {
     setEditTemplate("기본 프롬프트(템플릿) 내용을 작성하세요.");
     setUserInput('');
     setIsConfirmingDelete(false);
-    
-    // Mobile: Scroll to editor
-    if (window.innerWidth < 1024) {
-      setTimeout(() => {
-        document.getElementById('skill-editor')?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-    }
   };
 
   const handleSelect = (skill: SkillEntry) => {
@@ -69,13 +62,6 @@ export default function SkillsPage() {
     setUserInput('');
     setCopied(false);
     setIsConfirmingDelete(false);
-    
-    // Mobile: Scroll to editor
-    if (window.innerWidth < 1024) {
-      setTimeout(() => {
-        document.getElementById('skill-editor')?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-    }
   };
 
   const handleSave = async () => {
@@ -137,7 +123,10 @@ export default function SkillsPage() {
 
       <div className="flex flex-col lg:flex-row flex-1 gap-6 lg:gap-10 min-h-0 relative z-10">
         {/* Sidebar */}
-        <div className="w-full lg:w-80 bg-white/90 border border-slate-950/[0.06] ring-1 ring-blue-600/[0.04] rounded-[2.5rem] lg:rounded-[3.5rem] flex flex-col shrink-0 overflow-hidden shadow-[0_20px_50px_-15px_rgba(0,0,0,0.03)] backdrop-blur-md max-h-[400px] lg:max-h-none">
+        <div className={cn(
+          "w-full lg:w-80 bg-white/90 border border-slate-950/[0.06] ring-1 ring-blue-600/[0.04] rounded-[2.5rem] lg:rounded-[3.5rem] flex-col shrink-0 overflow-hidden shadow-[0_20px_50px_-15px_rgba(0,0,0,0.03)] backdrop-blur-md h-full min-h-[500px] lg:min-h-0",
+          (selectedSkillId || isCreating) ? "hidden lg:flex" : "flex"
+        )}>
           <div className="p-7 border-b border-slate-950/[0.06] flex justify-between items-center bg-slate-50/50">
             <Link href="/" className="p-3 bg-white hover:bg-slate-50 rounded-2xl border border-slate-950/[0.08] shadow-sm transition-all active:scale-95 group ring-1 ring-slate-950/[0.02]">
               <ArrowLeft size={18} className="text-slate-400 group-hover:text-slate-950" />
@@ -185,8 +174,11 @@ export default function SkillsPage() {
         </div>
 
         {/* Main Content */}
-        <div id="skill-editor" className="flex-1 bg-white/95 border border-slate-950/[0.06] ring-1 ring-blue-600/[0.08] rounded-[2.5rem] lg:rounded-[4rem] flex flex-col overflow-hidden shadow-[0_30px_80px_-20px_rgba(0,0,0,0.08)] relative backdrop-blur-md min-h-[600px] lg:min-h-0">
-          <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/5 rounded-full blur-[80px] -mr-40 -mt-40 z-0" />
+        <div id="skill-editor" className={cn(
+          "flex-1 bg-white/95 border border-slate-950/[0.06] ring-1 ring-blue-600/[0.08] rounded-[2.5rem] lg:rounded-[4rem] flex-col overflow-hidden shadow-[0_30px_80px_-20px_rgba(0,0,0,0.08)] relative backdrop-blur-md h-[70vh] lg:h-auto min-h-[500px] lg:min-h-0",
+          !(selectedSkillId || isCreating) ? "hidden lg:flex" : "flex"
+        )}>
+          <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/5 rounded-full blur-[80px] -mr-40 -mt-40 z-0 pointer-events-none" />
           
           {(!selectedSkillId && !isCreating) ? (
             <div className="flex-1 flex flex-col items-center justify-center text-slate-400 bg-slate-50/30 relative z-10">
@@ -199,12 +191,19 @@ export default function SkillsPage() {
               </p>
             </div>
           ) : (
-            <>
-              <div className="p-10 border-b border-slate-950/[0.06] flex justify-between items-center bg-slate-50/20 shrink-0 gap-8 relative z-10">
-                <div className="flex-1 flex flex-col gap-1.5">
-                  <input 
-                    type="text" 
-                    value={editTitle}
+            <div className="flex-1 flex flex-col overflow-hidden relative z-10">
+              <div className="p-6 lg:p-10 border-b border-slate-950/[0.06] flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-50/20 shrink-0 gap-4 lg:gap-8">
+                <div className="flex-1 flex gap-2 lg:gap-4 items-center w-full">
+                  <button 
+                    onClick={() => { setSelectedSkillId(null); setIsCreating(false); }}
+                    className="lg:hidden p-2 -ml-2 rounded-2xl hover:bg-slate-100 text-slate-400 hover:text-slate-900 transition-colors shrink-0"
+                  >
+                    <ArrowLeft size={24} />
+                  </button>
+                  <div className="flex-1 flex flex-col gap-1.5 w-full">
+                    <input 
+                      type="text" 
+                      value={editTitle}
                     onChange={e => setEditTitle(e.target.value)}
                     onFocus={() => {
                       const normalized = editTitle.replace(/\s/g, '');
@@ -215,9 +214,10 @@ export default function SkillsPage() {
                     onBlur={() => {
                       if (editTitle.trim() === "") setEditTitle("새 스킬 (프롬프트)");
                     }}
-                    placeholder="스킬명을 입력하세요"
-                    className="bg-white border-b-2 border-slate-950/10 text-slate-950 px-2 py-2 font-black w-full focus:outline-none focus:border-blue-600 font-outfit text-4xl tracking-tighter transition-all placeholder:text-slate-100 uppercase italic"
-                  />
+                      placeholder="스킬명을 입력하세요"
+                      className="bg-white border-b-2 border-slate-950/10 text-slate-950 px-2 py-2 font-black w-full min-w-0 focus:outline-none focus:border-blue-600 font-outfit text-2xl lg:text-4xl tracking-tighter transition-all placeholder:text-slate-100 uppercase italic truncate"
+                    />
+                  </div>
                 </div>
                 
                 <div className="flex items-center gap-4">
@@ -271,7 +271,7 @@ export default function SkillsPage() {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-12 flex flex-col gap-12 relative z-10">
+              <div className="flex-1 overflow-y-auto p-6 lg:p-12 flex flex-col gap-8 lg:gap-12 custom-scrollbar">
                 {/* 2. Base Prompt */}
                 <div className="flex-1 flex flex-col gap-4 min-h-[350px]">
                   <label className="text-2xl font-black text-slate-950 flex items-center gap-2 tracking-tight px-2 font-outfit uppercase">
@@ -324,7 +324,7 @@ export default function SkillsPage() {
                   </button>
                 </div>
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>
