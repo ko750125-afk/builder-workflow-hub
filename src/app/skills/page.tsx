@@ -38,12 +38,18 @@ export default function SkillsPage() {
 
   const sortedSkills = useMemo(() => {
     return [...skills].sort((a, b) => {
+      // 1. isFavorite (desc)
+      if (a.isFavorite && !b.isFavorite) return -1;
+      if (!a.isFavorite && b.isFavorite) return 1;
+
+      // 2. order (asc)
       if (a.order !== undefined && b.order !== undefined) {
-        return a.order - b.order;
+        if (a.order !== b.order) return a.order - b.order;
       }
       return a.title.localeCompare(b.title, 'ko-KR', { sensitivity: 'base' });
     });
   }, [skills]);
+
 
   const handleCreate = () => {
     if (!user) return;
@@ -189,30 +195,10 @@ export default function SkillsPage() {
                     {skill.isFavorite && <Star size={14} className={cn("shrink-0", selectedSkillId === skill.id ? "text-amber-400 fill-amber-400" : "text-amber-500 fill-amber-500")} />}
                     <div className="font-extrabold text-sm truncate uppercase tracking-tight">{skill.title}</div>
                   </div>
-                  {selectedSkillId !== skill.id && !skill.isFavorite && (
-                    <div className="absolute right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Zap size={14} className="text-amber-400 fill-amber-400" />
-                    </div>
-                  )}
                 </button>
-                {selectedSkillId !== skill.id && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-0 group-hover/skill:opacity-100 transition-opacity z-20">
-                    {index > 0 && (
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleMoveSkill(index, 'up'); }}
-                        className="p-1.5 rounded-lg text-slate-300 hover:text-slate-600 hover:bg-white"
-                      >
-                        <ArrowUp size={14} />
-                      </button>
-                    )}
-                    {index < sortedSkills.length - 1 && (
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleMoveSkill(index, 'down'); }}
-                        className="p-1.5 rounded-lg text-slate-300 hover:text-slate-600 hover:bg-white"
-                      >
-                        <ArrowDown size={14} />
-                      </button>
-                    )}
+                {selectedSkillId !== skill.id && !skill.isFavorite && (
+                  <div className="absolute right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Zap size={14} className="text-amber-400 fill-amber-400" />
                   </div>
                 )}
               </div>

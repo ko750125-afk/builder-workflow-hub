@@ -35,5 +35,7 @@ export interface TipCategory {
   name: string;
   icon?: string;
   order: number;
+  isPinned?: boolean;
   uid: string;
 }
+

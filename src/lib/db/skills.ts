@@ -64,13 +64,21 @@ export const subscribeToSkills = (uid: string | null, callback: (skills: SkillEn
     })) as SkillEntry[];
 
     skills.sort((a, b) => {
+      // 1. isFavorite (desc)
+      if (a.isFavorite && !b.isFavorite) return -1;
+      if (!a.isFavorite && b.isFavorite) return 1;
+
+      // 2. order (asc)
       if (a.order !== undefined && b.order !== undefined) {
-        return a.order - b.order;
+        if (a.order !== b.order) return a.order - b.order;
       }
+      
+      // 3. updatedAt (desc)
       const timeA = (a as any).updatedAt?.toDate?.()?.getTime() || 0;
       const timeB = (b as any).updatedAt?.toDate?.()?.getTime() || 0;
       return timeB - timeA;
     });
+
 
     callback(skills);
   });

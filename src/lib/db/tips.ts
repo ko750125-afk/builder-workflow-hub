@@ -52,10 +52,22 @@ export const subscribeToCategories = (uid: string | null, callback: (categories:
   const q = query(collection(db, CATEGORIES_COLLECTION), where("uid", "==", uid));
   return onSnapshot(q, (snapshot) => {
     let list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TipCategory));
-    list = list.sort((a, b) => (a.order || 0) - (b.order || 0));
+    list = list.sort((a, b) => {
+      // 1. isPinned (desc)
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      // 2. order (asc)
+      return (a.order || 0) - (b.order || 0);
+    });
     callback(list);
   });
 };
+
+export const toggleCategoryPin = async (id: string, isPinned: boolean) => {
+  const ref = doc(db, CATEGORIES_COLLECTION, id);
+  await updateDoc(ref, { isPinned });
+};
+
 
 export const addCategory = async (name: string, uid: string, order: number) => {
   const ref = await addDoc(collection(db, CATEGORIES_COLLECTION), {

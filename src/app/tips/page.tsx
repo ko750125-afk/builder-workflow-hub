@@ -3,6 +3,18 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { 
+  ChevronLeft, 
+  Plus, 
+  Trash2, 
+  Save, 
+  MessageSquare, 
+  Lightbulb,
+  Star,
+  Bold,
+  Type,
+  Palette
+} from 'lucide-react';
+import { 
   subscribeToCategories, 
   subscribeToTips, 
   initializeDefaultCategories,
@@ -11,19 +23,11 @@ import {
   updateTip,
   deleteTip,
   deleteCategory,
-  updateCategoryOrders
+  updateCategoryOrders,
+  toggleCategoryPin
 } from '@/lib/db/tips';
 import { TipCategory, DevTip } from '@/types';
-import { 
-  ChevronLeft, 
-  Plus, 
-  Trash2, 
-  Save, 
-  MessageSquare, 
-  Lightbulb,
-  ArrowUp,
-  ArrowDown
-} from 'lucide-react';
+
 import Link from 'next/link';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -35,11 +39,28 @@ function cn(...inputs: ClassValue[]) {
 const TipEditor = ({ categoryId, tip, uid, onAddTip, onUpdateTip }: { categoryId: string, tip: DevTip | null, uid: string, onAddTip: (catId: string, uid: string, title: string, content: string) => Promise<string>, onUpdateTip: (id: string, updates: Partial<DevTip>) => Promise<void> }) => {
   const [content, setContent] = useState(tip?.content || "");
   const [isSaving, setIsSaving] = useState(false);
+  const editorRef = React.useRef<HTMLDivElement>(null);
 
-  // Sync state if tip changes externally
+  // 초기 로드 시 및 팁 변경 시 에디터 내용 동기화
   useEffect(() => {
+    if (editorRef.current && tip?.content !== undefined && editorRef.current.innerHTML !== tip.content) {
+      editorRef.current.innerHTML = tip.content || "";
+    }
     setContent(tip?.content || "");
-  }, [tip?.content]);
+  }, [tip?.id, tip?.content]);
+
+  const execCommand = (command: string, value: string = "") => {
+    document.execCommand(command, false, value);
+    if (editorRef.current) {
+      setContent(editorRef.current.innerHTML);
+    }
+  };
+
+  const handleInput = () => {
+    if (editorRef.current) {
+      setContent(editorRef.current.innerHTML);
+    }
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -57,31 +78,104 @@ const TipEditor = ({ categoryId, tip, uid, onAddTip, onUpdateTip }: { categoryId
   };
 
   return (
-    <div className="flex flex-col h-full bg-white/60 backdrop-blur-md rounded-[2.5rem] p-8 border border-slate-100 shadow-inner flex-1">
-      <textarea 
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        placeholder="이 카테고리에 대한 지식을 자유롭게 기록하세요..."
-        className="w-full flex-1 bg-transparent text-base text-slate-700 font-medium leading-[2.2] outline-none resize-none custom-scrollbar"
+    <div className="flex flex-col h-full bg-white/60 backdrop-blur-md rounded-[2.5rem] border border-slate-100 shadow-inner flex-1 overflow-hidden">
+      {/* Rich Editor Toolbar */}
+      <div className="flex items-center justify-between p-3 px-6 border-b border-slate-100 bg-white/40 sticky top-0 z-10 overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-1">
+          <button 
+            onClick={() => execCommand('bold')}
+            className="p-2 hover:bg-white rounded-xl text-slate-500 hover:text-blue-600 transition-all hover:shadow-sm"
+            title="굵게"
+          >
+            <Bold size={18} />
+          </button>
+          
+          <div className="w-[1px] h-6 bg-slate-100 mx-1" />
+
+          {/* Text Color Picker */}
+          <div className="flex items-center group relative">
+            <button className="p-2 hover:bg-white rounded-xl text-slate-500 hover:text-blue-600 transition-all hover:shadow-sm flex items-center gap-1">
+              <Palette size={18} />
+              <div className="w-2 h-2 rounded-full bg-slate-900 border border-white/50" />
+            </button>
+            <div className="absolute top-full left-0 mt-1 p-2 bg-white rounded-2xl shadow-xl border border-slate-100 hidden group-hover:flex gap-1 z-20 animate-in fade-in zoom-in duration-200">
+              {['#000000', '#2563eb', '#dc2626', '#16a34a', '#d97706', '#7c3aed'].map(color => (
+                <button
+                  key={color}
+                  onClick={() => execCommand('foreColor', color)}
+                  className="w-6 h-6 rounded-lg pointer cursor-pointer hover:scale-110 transition-transform shadow-sm"
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Highlight Color Picker */}
+          <div className="flex items-center group relative">
+            <button className="p-2 hover:bg-white rounded-xl text-slate-500 hover:text-amber-600 transition-all hover:shadow-sm flex items-center gap-1">
+              <Type size={18} />
+              <div className="w-2 h-2 rounded-full bg-yellow-200 border border-white/50" />
+            </button>
+            <div className="absolute top-full left-0 mt-1 p-2 bg-white rounded-2xl shadow-xl border border-slate-100 hidden group-hover:flex gap-1 z-20 animate-in fade-in zoom-in duration-200">
+              {['transparent', '#fef9c3', '#dcfce7', '#dbeafe', '#f3e8ff', '#fee2e2'].map(color => (
+                <button
+                  key={color}
+                  onClick={() => execCommand('hiliteColor', color)}
+                  className="w-6 h-6 rounded-lg pointer cursor-pointer border border-slate-100 hover:scale-110 transition-transform shadow-sm flex items-center justify-center"
+                  style={{ backgroundColor: color }}
+                >
+                  {color === 'transparent' && <span className="text-[8px] text-slate-400">X</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="w-[1px] h-6 bg-slate-100 mx-1" />
+          
+          <button 
+            onClick={() => execCommand('insertUnorderedList')}
+            className="p-2 hover:bg-white rounded-xl text-slate-500 hover:text-slate-900 transition-all hover:shadow-sm text-sm font-black"
+          >
+            •
+          </button>
+        </div>
+
+        {/* Primary Save Button in Toolbar */}
+        <button
+          onClick={handleSave}
+          disabled={isSaving || content === (tip?.content || "")}
+          className={cn(
+            "flex items-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black tracking-widest uppercase transition-all shadow-sm active:scale-95",
+            isSaving ? "bg-slate-100 text-slate-400" : 
+            content !== (tip?.content || "") 
+              ? "bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200 shadow-lg animate-pulse ring-4 ring-blue-600/10" 
+              : "bg-slate-100 text-slate-400 border border-slate-200/50 opacity-50"
+          )}
+        >
+          {isSaving ? <div className="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-500 rounded-full animate-spin" /> : <Save size={14} />}
+          {isSaving ? "저장 중" : (content !== (tip?.content || "") ? "지금 저장" : "저장됨")}
+        </button>
+      </div>
+
+      <div 
+        ref={editorRef}
+        contentEditable
+        onInput={handleInput}
+        className="w-full flex-1 bg-transparent p-8 text-base text-slate-700 font-medium leading-[2.2] outline-none overflow-y-auto custom-scrollbar min-h-[300px]"
       />
       
-      <div className="flex items-center justify-between pt-6 mt-4 border-t border-slate-100/80">
-         <span className="text-[10px] text-slate-300 font-bold uppercase tracking-widest pl-2">
-           {tip?.updatedAt?.toDate?.()?.toLocaleDateString() ? `Last updated: ${tip.updatedAt.toDate().toLocaleDateString()}` : "Not saved yet"}
+      <div className="flex items-center justify-between p-4 px-8 border-t border-slate-100/80 bg-white/20">
+         <span className="text-[10px] text-slate-300 font-bold uppercase tracking-widest">
+           {tip?.updatedAt && typeof (tip.updatedAt as any).toDate === 'function' 
+             ? `Last synced: ${(tip.updatedAt as any).toDate().toLocaleString()}` 
+             : "Drafting mode"}
          </span>
-         <button
-           onClick={handleSave}
-           disabled={isSaving || content === (tip?.content || "")}
-           className={cn(
-             "flex items-center gap-2 px-8 py-3.5 rounded-2xl text-xs font-black tracking-widest uppercase transition-all shadow-sm active:scale-95",
-             isSaving ? "bg-slate-100 text-slate-400" : 
-             content !== (tip?.content || "") ? "bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200 shadow-md" : 
-             "bg-slate-50 text-slate-400 border border-slate-200/50"
-           )}
-         >
-           {isSaving ? <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-500 rounded-full animate-spin" /> : <Save size={16} />}
-           {isSaving ? "저장 중..." : "저장"}
-         </button>
+         {content !== (tip?.content || "") && (
+           <span className="text-[10px] text-blue-500 font-black animate-pulse flex items-center gap-1 uppercase tracking-tighter">
+             <div className="w-1 h-1 bg-blue-500 rounded-full" />
+             Unsaved changes detected
+           </span>
+         )}
       </div>
     </div>
   );
@@ -260,87 +354,82 @@ export default function TipsPage() {
 
             <div className="flex-1 overflow-y-auto flex flex-col gap-1 pr-2 custom-scrollbar">
               {categories.map((cat, index) => (
-                <div key={cat.id} className="relative group/cat">
+                <div key={cat.id} className="relative group/cat flex items-center gap-1">
                   <button
                     onClick={() => {
                       setSelectedCategoryId(cat.id);
                       setDeleteConfirmId(null);
                     }}
                     className={cn(
-                      "w-full flex items-center justify-between px-5 py-4 rounded-2xl transition-all font-black text-sm text-left group",
+                      "flex-1 flex items-center justify-between px-5 py-4 rounded-2xl transition-all font-black text-sm text-left group gap-2",
                       selectedCategoryId === cat.id 
                         ? "bg-blue-600 text-white shadow-lg shadow-blue-100 scale-[1.02] z-10" 
                         : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-transparent hover:border-slate-100"
                     )}
                   >
-                    <div className="flex items-center gap-3 pr-6">
+                    <div className="flex items-center gap-3 overflow-hidden">
                       <div className={cn(
-                        "w-2 h-2 rounded-full",
+                        "w-2 h-2 flex-shrink-0 rounded-full",
                         selectedCategoryId === cat.id ? "bg-white animate-pulse" : "bg-slate-300 group-hover:bg-slate-400"
                       )} />
                       <span className="capitalize truncate">{cat.name}</span>
                     </div>
+                    {cat.isPinned && (
+                      <Star size={12} className={cn("shrink-0", selectedCategoryId === cat.id ? "text-white fill-white" : "text-amber-500 fill-amber-500")} />
+                    )}
                   </button>
-                  {deleteConfirmId === cat.id ? (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 z-20 bg-white/90 p-1 rounded-lg shadow-sm border border-red-100 animate-in fade-in duration-200">
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat.id); }} 
-                        className="p-1 px-2 text-[10px] font-bold text-white bg-red-500 rounded hover:bg-red-600 transition-colors"
-                      >
-                        삭제
-                      </button>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(null); }} 
-                        className="p-1 px-2 text-[10px] font-bold text-slate-500 bg-slate-100 rounded hover:bg-slate-200 transition-colors"
-                      >
-                        취소
-                      </button>
-                    </div>
-                  ) : (
-                    <div className={cn(
-                      "absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-0.5 transition-all z-20",
-                      selectedCategoryId === cat.id 
-                        ? "opacity-100 md:opacity-80" 
-                        : "opacity-100 md:opacity-0 md:group-hover/cat:opacity-100"
-                    )}>
-                      {index > 0 && (
+                  
+                  <div className="flex flex-col justify-center items-center w-8 flex-shrink-0">
+                    {deleteConfirmId === cat.id ? (
+                      <div className="flex flex-col items-center gap-1 z-20 bg-white p-1 rounded-lg">
                         <button 
-                          onClick={(e) => { e.stopPropagation(); handleMoveCategory(index, 'up'); }}
-                          className={cn(
-                            "p-1.5 rounded-lg transition-all",
-                            selectedCategoryId === cat.id ? "text-blue-200 hover:text-white hover:bg-blue-700" : "text-slate-300 hover:text-slate-600 hover:bg-slate-100"
-                          )}
+                          onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat.id); }} 
+                          className="p-1 px-[0.3rem] text-[10px] whitespace-nowrap font-bold text-white bg-red-500 rounded hover:bg-red-600 transition-colors border border-transparent"
                         >
-                          <ArrowUp size={14} />
+                          삭제
                         </button>
-                      )}
-                      {index < categories.length - 1 && (
                         <button 
-                          onClick={(e) => { e.stopPropagation(); handleMoveCategory(index, 'down'); }}
-                          className={cn(
-                            "p-1.5 rounded-lg transition-all",
-                            selectedCategoryId === cat.id ? "text-blue-200 hover:text-white hover:bg-blue-700" : "text-slate-300 hover:text-slate-600 hover:bg-slate-100"
-                          )}
+                          onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(null); }} 
+                          className="p-1 px-[0.3rem] text-[10px] whitespace-nowrap font-bold text-slate-500 bg-slate-100 rounded hover:bg-slate-200 transition-colors border border-slate-200"
                         >
-                          <ArrowDown size={14} />
+                          취소
                         </button>
-                      )}
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(cat.id); }}
-                        className={cn(
-                          "p-1.5 rounded-lg transition-all ml-1",
-                          selectedCategoryId === cat.id 
-                            ? "text-blue-200 hover:text-white hover:bg-blue-700" 
-                            : "text-slate-300 hover:text-red-500 hover:bg-red-50"
-                        )}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  )}
+                      </div>
+                    ) : (
+                      <div className={cn(
+                        "flex flex-col items-center gap-1 transition-all w-full",
+                        selectedCategoryId === cat.id 
+                          ? "opacity-100" 
+                          : "opacity-0 group-hover/cat:opacity-100"
+                      )}>
+                        <button 
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            toggleCategoryPin(cat.id, !cat.isPinned); 
+                          }}
+                          className={cn(
+                            "p-1.5 rounded-lg transition-all active:scale-90",
+                            cat.isPinned ? "text-amber-500" : "text-slate-200 hover:text-slate-400"
+                          )}
+                          title={cat.isPinned ? "핀 해제" : "핀 고정"}
+                        >
+                          <Star size={16} fill={cat.isPinned ? "currentColor" : "none"} />
+                        </button>
+                        
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(cat.id); }}
+                          className="p-1.5 rounded-lg text-slate-200 hover:text-red-500 hover:bg-red-50 transition-colors"
+                          title="카테고리 삭제"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
+
           </div>
         </div>
 
