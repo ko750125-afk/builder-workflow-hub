@@ -67,6 +67,11 @@ export const addCategory = async (name: string, uid: string, order: number) => {
   return ref.id;
 };
 
+export const deleteCategory = async (id: string) => {
+  const ref = doc(db, CATEGORIES_COLLECTION, id);
+  await deleteDoc(ref);
+};
+
 // --- Tips ---
 
 export const addTip = async (categoryId: string, uid: string, title: string = "새로운 팁", content: string = "") => {

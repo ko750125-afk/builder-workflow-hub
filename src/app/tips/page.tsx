@@ -9,7 +9,8 @@ import {
   addCategory,
   addTip,
   updateTip,
-  deleteTip
+  deleteTip,
+  deleteCategory
 } from '@/lib/db/tips';
 import { TipCategory, DevTip } from '@/types';
 import { 
@@ -135,6 +136,20 @@ export default function TipsPage() {
     }
   };
 
+  const handleDeleteCategory = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      if (!confirm("이 카테고리를 정말 삭제할까요?")) return;
+      await deleteCategory(id);
+      if (selectedCategoryId === id) {
+        setSelectedCategoryId(null);
+        setTips([]);
+      }
+    } catch (error) {
+      console.error("Failed to delete category:", error);
+    }
+  };
+
   const handleUpdateTipContent = async (id: string, updates: Partial<DevTip>) => {
     try {
       await updateTip(id, updates);
@@ -193,41 +208,59 @@ export default function TipsPage() {
             </div>
 
             {isAddingCategory && (
-              <div className="flex flex-col gap-2 animate-in slide-in-from-top-2 duration-300">
+              <div className="flex relative animate-in slide-in-from-top-2 duration-300">
                 <input 
                   type="text" 
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
                   placeholder="새 카테고리..."
                   onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
-                  className="w-full px-4 py-2.5 text-xs bg-slate-50 border border-slate-100 rounded-xl outline-none focus:border-blue-300 font-bold"
+                  className="w-full px-4 py-2.5 pr-10 text-xs bg-slate-50 border border-slate-100 rounded-xl outline-none focus:border-blue-300 font-bold"
                   autoFocus
                 />
+                <button 
+                  onClick={handleAddCategory}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-blue-600 transition-colors"
+                >
+                  <Save size={14} />
+                </button>
               </div>
             )}
 
             <div className="flex-1 overflow-y-auto flex flex-col gap-1 pr-2 custom-scrollbar">
               {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => {
-                    setSelectedCategoryId(cat.id);
-                  }}
-                  className={cn(
-                    "w-full flex items-center justify-between px-5 py-4 rounded-2xl transition-all font-black text-sm text-left group",
-                    selectedCategoryId === cat.id 
-                      ? "bg-blue-600 text-white shadow-lg shadow-blue-100 scale-[1.02]" 
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-transparent hover:border-slate-100"
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={cn(
-                      "w-2 h-2 rounded-full",
-                      selectedCategoryId === cat.id ? "bg-white animate-pulse" : "bg-slate-300 group-hover:bg-slate-400"
-                    )} />
-                    <span className="capitalize">{cat.name}</span>
-                  </div>
-                </button>
+                <div key={cat.id} className="relative group/cat">
+                  <button
+                    onClick={() => {
+                      setSelectedCategoryId(cat.id);
+                    }}
+                    className={cn(
+                      "w-full flex items-center justify-between px-5 py-4 rounded-2xl transition-all font-black text-sm text-left group",
+                      selectedCategoryId === cat.id 
+                        ? "bg-blue-600 text-white shadow-lg shadow-blue-100 scale-[1.02] z-10" 
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-transparent hover:border-slate-100"
+                    )}
+                  >
+                    <div className="flex items-center gap-3 pr-6">
+                      <div className={cn(
+                        "w-2 h-2 rounded-full",
+                        selectedCategoryId === cat.id ? "bg-white animate-pulse" : "bg-slate-300 group-hover:bg-slate-400"
+                      )} />
+                      <span className="capitalize truncate">{cat.name}</span>
+                    </div>
+                  </button>
+                  <button 
+                    onClick={(e) => handleDeleteCategory(cat.id, e)}
+                    className={cn(
+                      "absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all z-20",
+                      selectedCategoryId === cat.id 
+                        ? "text-blue-200 hover:text-white hover:bg-blue-700 opacity-80" 
+                        : "text-slate-300 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover/cat:opacity-100"
+                    )}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               ))}
             </div>
           </div>
