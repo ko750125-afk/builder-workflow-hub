@@ -13,7 +13,8 @@ import {
   Bold,
   Type,
   Palette,
-  Underline
+  Underline,
+  List
 } from 'lucide-react';
 import { 
   subscribeToCategories, 
@@ -84,9 +85,10 @@ const TipEditor = ({ categoryId, tip, uid, onAddTip, onUpdateTip }: { categoryId
       <div className="flex items-center justify-between p-3 px-6 border-b border-slate-100 bg-white/40 sticky top-0 z-10 overflow-x-auto no-scrollbar">
         <div className="flex items-center gap-1">
           <button 
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => execCommand('bold')}
             className="p-2 hover:bg-white rounded-xl text-slate-500 hover:text-blue-600 transition-all hover:shadow-sm"
-            title="굵게"
+            title="굵게 (Ctrl+B)"
           >
             <Bold size={18} />
           </button>
@@ -95,14 +97,19 @@ const TipEditor = ({ categoryId, tip, uid, onAddTip, onUpdateTip }: { categoryId
 
           {/* Text Color Picker */}
           <div className="flex items-center group relative">
-            <button className="p-2 hover:bg-white rounded-xl text-slate-500 hover:text-blue-600 transition-all hover:shadow-sm flex items-center gap-1">
+            <button 
+              onMouseDown={(e) => e.preventDefault()}
+              className="p-2 hover:bg-white rounded-xl text-slate-500 hover:text-blue-600 transition-all hover:shadow-sm flex items-center gap-1"
+            >
               <Palette size={18} />
               <div className="w-2 h-2 rounded-full bg-slate-900 border border-white/50" />
+              <span className="text-[9px] font-bold text-slate-400">색상</span>
             </button>
             <div className="absolute top-full left-0 mt-1 p-2 bg-white rounded-2xl shadow-xl border border-slate-100 hidden group-hover:flex gap-1 z-20 animate-in fade-in zoom-in duration-200">
               {['#000000', '#2563eb', '#dc2626', '#16a34a', '#d97706', '#7c3aed'].map(color => (
                 <button
                   key={color}
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => execCommand('foreColor', color)}
                   className="w-6 h-6 rounded-lg pointer cursor-pointer hover:scale-110 transition-transform shadow-sm"
                   style={{ backgroundColor: color }}
@@ -113,14 +120,19 @@ const TipEditor = ({ categoryId, tip, uid, onAddTip, onUpdateTip }: { categoryId
 
           {/* Highlight Color Picker */}
           <div className="flex items-center group relative">
-            <button className="p-2 hover:bg-white rounded-xl text-slate-500 hover:text-amber-600 transition-all hover:shadow-sm flex items-center gap-1">
+            <button 
+              onMouseDown={(e) => e.preventDefault()}
+              className="p-2 hover:bg-white rounded-xl text-slate-500 hover:text-amber-600 transition-all hover:shadow-sm flex items-center gap-1"
+            >
               <Type size={18} />
               <div className="w-2 h-2 rounded-full bg-yellow-200 border border-white/50" />
+              <span className="text-[9px] font-bold text-slate-400">배경</span>
             </button>
             <div className="absolute top-full left-0 mt-1 p-2 bg-white rounded-2xl shadow-xl border border-slate-100 hidden group-hover:flex gap-1 z-20 animate-in fade-in zoom-in duration-200">
               {['transparent', '#fef9c3', '#dcfce7', '#dbeafe', '#f3e8ff', '#fee2e2'].map(color => (
                 <button
                   key={color}
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => execCommand('backColor', color)}
                   className="w-6 h-6 rounded-lg pointer cursor-pointer border border-slate-100 hover:scale-110 transition-transform shadow-sm flex items-center justify-center"
                   style={{ backgroundColor: color }}
@@ -132,9 +144,10 @@ const TipEditor = ({ categoryId, tip, uid, onAddTip, onUpdateTip }: { categoryId
           </div>
 
           <button 
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => execCommand('underline')}
             className="p-2 hover:bg-white rounded-xl text-slate-500 hover:text-slate-900 transition-all hover:shadow-sm"
-            title="밑줄"
+            title="밑줄 (Ctrl+U)"
           >
             <Underline size={18} />
           </button>
@@ -142,10 +155,12 @@ const TipEditor = ({ categoryId, tip, uid, onAddTip, onUpdateTip }: { categoryId
           <div className="w-[1px] h-6 bg-slate-100 mx-1" />
           
           <button 
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => execCommand('insertUnorderedList')}
-            className="p-2 hover:bg-white rounded-xl text-slate-500 hover:text-slate-900 transition-all hover:shadow-sm text-sm font-black"
+            className="p-2 hover:bg-white rounded-xl text-slate-500 hover:text-slate-900 transition-all hover:shadow-sm"
+            title="불렛 목록 추가"
           >
-            •
+            <List size={18} />
           </button>
         </div>
 
