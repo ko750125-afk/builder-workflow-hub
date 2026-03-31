@@ -19,3 +19,21 @@ export interface AppEntry {
   updatedAt: any; // Firestore Timestamp
   uid?: string;
 }
+
+export interface DevTip {
+  id: string;
+  categoryId: string;
+  title: string;
+  content: string;
+  createdAt: any;
+  updatedAt: any;
+  uid: string;
+}
+
+export interface TipCategory {
+  id: string;
+  name: string;
+  icon?: string;
+  order: number;
+  uid: string;
+}

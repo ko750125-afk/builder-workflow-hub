@@ -3,7 +3,7 @@
 import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { auth, googleProvider } from '@/lib/firebase';
-import { signInWithRedirect, signOut } from 'firebase/auth';
+import { signInWithPopup, signOut } from 'firebase/auth';
 import { LogIn, LogOut, User as UserIcon } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -17,7 +17,7 @@ export default function AuthStatus() {
 
   const handleLogin = async () => {
     try {
-      await signInWithRedirect(auth, googleProvider);
+      await signInWithPopup(auth, googleProvider);
     } catch (error) {
       console.error("Login failed:", error);
       if ((error as any).code === 'auth/operation-not-allowed') {

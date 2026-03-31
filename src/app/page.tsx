@@ -6,7 +6,7 @@ import { subscribeToApps, createApp, updateApp } from '@/lib/db/apps';
 import AppCard from '@/components/AppCard';
 import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
-import { Search, Plus, Star, LayoutGrid, ListFilter, TrendingUp, Lock, Rocket, Code2, Zap, Globe } from 'lucide-react';
+import { Search, Plus, Star, LayoutGrid, ListFilter, TrendingUp, Lock, Rocket, Code2, Zap, Globe, Lightbulb, LogIn } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { 
@@ -17,6 +17,8 @@ import {
   detectGithubFromUrl
 } from '@/lib/vercel';
 import { useRouter } from 'next/navigation';
+import { auth, googleProvider } from '@/lib/firebase';
+import { signInWithPopup } from 'firebase/auth';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -26,6 +28,15 @@ export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
   const [apps, setApps] = useState<AppEntry[]>([]);
   const router = useRouter();
+
+  const handleLogin = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (err: any) {
+      console.error("Home login failed:", err);
+      alert("로그인 중 오류가 발생했습니다: " + err.message);
+    }
+  };
 
   useEffect(() => {
     if (authLoading) return;
@@ -205,9 +216,19 @@ export default function Dashboard() {
             <p className="text-sm text-slate-500 leading-relaxed font-medium">클릭 한 번으로 최적의 개발 프롬프트를 생성하여 개발 시간을 단축하세요.</p>
           </div>
         </div>
-        <div className="p-5 bg-blue-50 border border-blue-100 rounded-2xl flex items-center gap-3 text-sm text-blue-700 font-semibold shadow-sm overflow-hidden">
-          <Lock size={16} />
-          <span>안전한 구글 로그인을 통해 사용자님의 데이터를 보호합니다.</span>
+        <div className="flex flex-col items-center gap-6 w-full mb-12">
+          <button 
+            onClick={handleLogin}
+            className="group relative flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold px-12 py-5 rounded-[2.5rem] transition-all shadow-2xl shadow-blue-500/40 active:scale-95 overflow-hidden w-full max-w-md"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+            <LogIn size={24} strokeWidth={2.5} />
+            <span>Google로 무료 시작하기</span>
+          </button>
+          <div className="p-5 bg-blue-50/50 border border-blue-100/50 rounded-2xl flex items-center gap-3 text-sm text-blue-700 font-semibold shadow-sm overflow-hidden backdrop-blur-sm">
+            <Lock size={16} />
+            <span>안전한 구글 로그인을 통해 사용자님의 데이터를 보호합니다.</span>
+          </div>
         </div>
       </div>
     );
@@ -219,8 +240,17 @@ export default function Dashboard() {
       <div className="flex flex-col md:flex-row justify-between items-center bg-white/80 backdrop-blur-xl p-8 rounded-[3rem] border border-slate-950/[0.06] ring-1 ring-blue-600/[0.08] shadow-[0_20px_50px_-15px_rgba(0,0,0,0.05)] gap-6 mb-4 relative overflow-hidden transition-all duration-500">
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px] -mr-32 -mt-32" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-amber-500/5 rounded-full blur-[60px] -ml-24 -mb-24" />
-        <div className="flex flex-col gap-1.5 px-2 relative z-10">
-          <h1 className="text-3xl font-black font-outfit text-slate-950 tracking-tighter uppercase italic">DASHBOARD</h1>
+        <div className="flex flex-col md:flex-row items-center gap-1.5 px-2 relative z-10 w-full justify-between">
+          <div className="flex items-center gap-4">
+            <h1 className="text-3xl font-black font-outfit text-slate-950 tracking-tighter uppercase italic">DASHBOARD</h1>
+            <Link 
+              href="/tips"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-2xl hover:bg-blue-100 transition-all font-black text-xs border border-blue-100 shadow-sm"
+            >
+              <Lightbulb size={16} fill="currentColor" />
+              <span>개발팁</span>
+            </Link>
+          </div>
         </div>
         <div className="flex gap-4 flex-wrap md:flex-nowrap relative z-10">
           <button 
@@ -251,6 +281,13 @@ export default function Dashboard() {
             <Plus size={18} strokeWidth={3} />
             <span>아이디어 추가</span>
           </button>
+          <Link 
+            href="/tips"
+            className="flex items-center justify-center gap-2 px-6 py-3.5 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all font-bold text-xs active:scale-95 shadow-lg shadow-blue-200"
+          >
+            <Lightbulb size={18} fill="currentColor" />
+            <span>개발팁</span>
+          </Link>
           <button 
             onClick={() => handleCreateWithStatus('active')}
             className="flex items-center justify-center gap-2 btn-primary px-8 py-3.5 text-sm active:scale-95 shadow-blue-500/30"
