@@ -11,6 +11,7 @@ import {
 import { useParams, useRouter } from 'next/navigation';
 import { AppEntry, AppStatus, GithubStatus, ProgressLevel } from '@/types';
 import { getAppDetail, updateApp, deleteApp } from '@/lib/db/apps';
+import { SkillEntry, subscribeToSkills } from '@/lib/db/skills';
 import { 
   ArrowLeft, 
   ChevronLeft,
@@ -29,7 +30,10 @@ import {
   Layers, 
   Terminal, 
   Settings,
-  Globe 
+  Globe,
+  Zap,
+  Check,
+  Plus
 } from 'lucide-react';
 import PromptSection from '@/components/PromptSection';
 import Link from 'next/link';
@@ -44,10 +48,10 @@ function cn(...inputs: ClassValue[]) {
 
 const progressOptions: ProgressLevel[] = [0, 20, 50, 80, 100];
 const statusOptions: { value: AppStatus; label: string; color: string }[] = [
-  { value: 'deployed', label: '배포완료', color: 'bg-blue-600' },
   { value: 'testing', label: '테스트중', color: 'bg-amber-500' },
-  { value: 'active', label: '초기개발단계', color: 'bg-emerald-600' },
-  { value: 'idea', label: '아이디어단계', color: 'bg-slate-900' },
+  { value: 'active', label: '신규개발중', color: 'bg-emerald-600' },
+  { value: 'idea', label: '기획중', color: 'bg-slate-900' },
+  { value: 'deployed', label: '배포완료', color: 'bg-blue-600' },
   { value: 'archived', label: '폐기', color: 'bg-slate-400' },
 ];
 
@@ -68,11 +72,14 @@ export default function AppDetailPage() {
   // Sections toggle
   const [openSections, setOpenSections] = useState({
     prd: false,
+    skills: true, // Default open for visibility
     prompt: false,
     memo: false,
     settings: false
   });
   
+  const [allSkills, setAllSkills] = useState<SkillEntry[]>([]);
+  const [copiedSkillId, setCopiedSkillId] = useState<string | null>(null);
   const [vercelToken, setVercelToken] = useState('');
 
   useEffect(() => {
@@ -113,6 +120,14 @@ export default function AppDetailPage() {
     };
     fetchApp();
   }, [id, router, user, authLoading]);
+  
+  useEffect(() => {
+    if (authLoading || !user) return;
+    const unsubscribe = subscribeToSkills(user.uid, (data) => {
+      setAllSkills(data);
+    });
+    return () => unsubscribe();
+  }, [user, authLoading]);
 
   const toggleSection = (section: keyof typeof openSections) => {
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
@@ -215,6 +230,27 @@ export default function AppDetailPage() {
   };
 
 
+
+  const handleToggleSkill = (skillId: string) => {
+    if (!app) return;
+    const currentSkillIds = app.skillIds || [];
+    const isLinked = currentSkillIds.includes(skillId);
+    
+    let newSkillIds: string[];
+    if (isLinked) {
+      newSkillIds = currentSkillIds.filter(id => id !== skillId);
+    } else {
+      newSkillIds = [...currentSkillIds, skillId];
+    }
+    
+    handleUpdate('skillIds', newSkillIds);
+  };
+
+  const handleCopySkill = (skill: SkillEntry) => {
+    navigator.clipboard.writeText(skill.template);
+    setCopiedSkillId(skill.id);
+    setTimeout(() => setCopiedSkillId(null), 2000);
+  };
 
   if (loading) return (
     <div className="flex items-center justify-center py-40">
@@ -450,6 +486,100 @@ export default function AppDetailPage() {
                   placeholder="아이디어의 핵심 기능과 상세 기획을 기록하세요..."
                   className="w-full h-96 bg-white border border-slate-950/[0.06] rounded-3xl p-10 outline-none focus:ring-4 focus:ring-blue-100/30 focus:border-blue-300 text-slate-700 font-medium leading-relaxed shadow-inner placeholder:text-slate-200 ring-1 ring-slate-950/[0.02]"
                 />
+              </div>
+            )}
+          </div>
+
+          {/* Linked Skills Section */}
+          <div className="border border-slate-950/[0.06] rounded-[2.5rem] overflow-hidden bg-slate-50/50 shadow-sm ring-1 ring-orange-500/[0.02] backdrop-blur-sm">
+            <button 
+              onClick={() => toggleSection('skills')}
+              className="w-full px-10 py-8 flex items-center justify-between hover:bg-white/50 transition-all"
+            >
+              <div className="flex items-center gap-6">
+                <div className={cn(
+                  "p-4 rounded-[1.5rem] transition-all",
+                  (app.skillIds?.length || 0) > 0
+                    ? "bg-orange-500 text-white shadow-lg shadow-orange-200" 
+                    : "bg-slate-50 text-slate-300 border border-slate-100"
+                )}>
+                  <Zap size={28} fill={(app.skillIds?.length || 0) > 0 ? "white" : "none"} />
+                </div>
+                <div className="text-left flex items-center gap-3">
+                  <div>
+                    <span className="block font-black text-slate-950 text-xl font-outfit uppercase italic tracking-tight">연동된 스킬 라이브러리</span>
+                    <span className="text-[10px] text-orange-600 font-black uppercase tracking-[0.2em]">Linked Skills & Prompt Accelerator</span>
+                  </div>
+                  {(app.skillIds?.length || 0) > 0 && (
+                    <span className="bg-orange-100 text-orange-700 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-tighter">{app.skillIds?.length}개 연결됨</span>
+                  )}
+                </div>
+              </div>
+              {openSections.skills ? <ChevronUp size={28} className="text-slate-400" /> : <ChevronDown size={28} className="text-slate-400" />}
+            </button>
+            
+            {openSections.skills && (
+              <div className="px-10 pb-10 flex flex-col gap-8 animate-in slide-in-from-top-4 duration-500">
+                {/* Currently Linked */}
+                <div className="flex flex-col gap-4">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-2">ACTIVE SKILLS (CLICK TO COPY PROMPT)</span>
+                  <div className="flex flex-wrap gap-4">
+                    {app.skillIds?.map(sid => {
+                      const skill = allSkills.find(s => s.id === sid);
+                      if (!skill) return null;
+                      return (
+                        <div key={sid} className="group relative">
+                          <button 
+                            onClick={() => handleCopySkill(skill)}
+                            className={cn(
+                              "pl-6 pr-12 py-4 rounded-2xl border font-bold text-sm transition-all active:scale-95 flex items-center gap-3 relative overflow-hidden",
+                              copiedSkillId === sid 
+                                ? "bg-emerald-600 border-emerald-700 text-white shadow-xl shadow-emerald-200"
+                                : "bg-white border-slate-100 text-slate-700 hover:border-slate-300 hover:shadow-md shadow-sm"
+                            )}
+                          >
+                            <Zap size={14} fill={copiedSkillId === sid ? "white" : "orange"} className={cn(copiedSkillId === sid ? "" : "text-orange-500")} />
+                            <span>{skill.title}</span>
+                            {copiedSkillId === sid && <Check size={14} className="ml-1" />}
+                          </button>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleToggleSkill(sid); }}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-slate-300 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"
+                            title="연동 해제"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                    {(app.skillIds?.length || 0) === 0 && (
+                      <div className="w-full py-10 border-2 border-dashed border-slate-100 rounded-3xl flex flex-col items-center justify-center text-slate-300 gap-2">
+                        <Zap size={24} className="opacity-20" />
+                        <span className="text-xs font-bold uppercase tracking-widest">No Skills Linked Yet</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Add More Skills */}
+                <div className="flex flex-col gap-4 pt-4 border-t border-slate-100">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-2">ADD SKILLS FROM LIBRARY</span>
+                  <div className="flex flex-wrap gap-2">
+                    {allSkills.filter(s => !(app.skillIds || []).includes(s.id)).map(skill => (
+                      <button 
+                        key={skill.id}
+                        onClick={() => handleToggleSkill(skill.id)}
+                        className="px-4 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-100 text-slate-500 rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center gap-2"
+                      >
+                        <Plus size={12} />
+                        {skill.title}
+                      </button>
+                    ))}
+                    {allSkills.filter(s => !(app.skillIds || []).includes(s.id)).length === 0 && (
+                      <span className="text-[10px] text-slate-300 italic pl-2">연결 가능한 추가 스킬이 없습니다.</span>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </div>

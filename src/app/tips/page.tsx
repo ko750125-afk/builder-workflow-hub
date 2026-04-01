@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { 
   ChevronLeft, 
@@ -13,9 +13,15 @@ import {
   Bold,
   Type,
   Palette,
-  Underline,
+  Underline as UnderlineIcon,
   List
 } from 'lucide-react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import { StarterKit } from '@tiptap/starter-kit';
+import { Color } from '@tiptap/extension-color';
+import { TextStyle } from '@tiptap/extension-text-style';
+import { Highlight } from '@tiptap/extension-highlight';
+import { Underline } from '@tiptap/extension-underline';
 import { 
   subscribeToCategories, 
   subscribeToTips, 
@@ -41,33 +47,44 @@ function cn(...inputs: ClassValue[]) {
 const TipEditor = ({ categoryId, tip, uid, onAddTip, onUpdateTip }: { categoryId: string, tip: DevTip | null, uid: string, onAddTip: (catId: string, uid: string, title: string, content: string) => Promise<string>, onUpdateTip: (id: string, updates: Partial<DevTip>) => Promise<void> }) => {
   const [content, setContent] = useState(tip?.content || "");
   const [isSaving, setIsSaving] = useState(false);
-  const editorRef = React.useRef<HTMLDivElement>(null);
+  const [activePicker, setActivePicker] = useState<'fore' | 'back' | null>(null);
+  const [lastForeColor, setLastForeColor] = useState('#000000');
+  const [lastBackColor, setLastBackColor] = useState('#fef9c3');
 
-  // 초기 로드 시 및 팁 변경 시 에디터 내용 동기화
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      TextStyle,
+      Color,
+      Highlight.configure({ multicolor: true }),
+      Underline,
+    ],
+    content: tip?.content || "",
+    onUpdate: ({ editor }) => {
+      setContent(editor.getHTML());
+    },
+    editorProps: {
+      attributes: {
+        class: 'w-full flex-1 bg-transparent p-8 text-base text-slate-950 font-medium leading-[2.2] outline-none overflow-y-auto custom-scrollbar min-h-[300px] rich-editor-content focus:outline-none',
+        style: 'caret-color: #1d4ed8;',
+      },
+    },
+  });
+
+  // 외부(팁 전환 등)에서 데이터가 바뀌었을 때 에디터 내용 동기화
   useEffect(() => {
-    if (editorRef.current && tip?.content !== undefined && editorRef.current.innerHTML !== tip.content) {
-      editorRef.current.innerHTML = tip.content || "";
+    if (editor && tip?.content !== undefined) {
+      if (editor.getHTML() !== tip.content) {
+        editor.commands.setContent(tip.content);
+        setContent(tip.content);
+      }
     }
-    setContent(tip?.content || "");
-  }, [tip?.id, tip?.content]);
+  }, [tip?.id, tip?.content, editor]);
 
-  const execCommand = (command: string, value: string = "") => {
-    if (editorRef.current) {
-      editorRef.current.focus();
-    }
-    document.execCommand(command, false, value);
-    if (editorRef.current) {
-      setContent(editorRef.current.innerHTML);
-    }
-  };
-
-  const handleInput = () => {
-    if (editorRef.current) {
-      setContent(editorRef.current.innerHTML);
-    }
-  };
+  if (!editor) return null;
 
   const handleSave = async () => {
+    if (isSaving) return;
     setIsSaving(true);
     try {
       if (tip) {
@@ -82,15 +99,21 @@ const TipEditor = ({ categoryId, tip, uid, onAddTip, onUpdateTip }: { categoryId
     }
   };
 
+  const togglePicker = (type: 'fore' | 'back') => {
+    setActivePicker(activePicker === type ? null : type);
+  };
+
   return (
     <div className="flex flex-col h-full bg-white/60 backdrop-blur-md rounded-[2.5rem] border border-slate-100 shadow-inner flex-1 overflow-hidden">
       {/* Rich Editor Toolbar */}
-      <div className="flex items-center justify-between p-3 px-6 border-b border-slate-100 bg-white/40 sticky top-0 z-10 overflow-x-auto no-scrollbar">
+      <div className="flex items-center justify-between p-3 px-6 border-b border-slate-100 bg-white/40 sticky top-0 z-20 overflow-visible">
         <div className="flex items-center gap-1">
           <button 
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => execCommand('bold')}
-            className="p-2 hover:bg-white rounded-xl text-slate-500 hover:text-blue-600 transition-all hover:shadow-sm"
+            onClick={() => editor.chain().focus().toggleBold().run()}
+            className={cn(
+              "p-2 rounded-xl transition-all hover:shadow-sm",
+              editor.isActive('bold') ? "bg-blue-50 text-blue-600 shadow-inner" : "text-slate-500 hover:bg-white hover:text-blue-600"
+            )}
             title="굵게 (Ctrl+B)"
           >
             <Bold size={18} />
@@ -99,69 +122,97 @@ const TipEditor = ({ categoryId, tip, uid, onAddTip, onUpdateTip }: { categoryId
           <div className="w-[1px] h-6 bg-slate-100 mx-1" />
 
           {/* Text Color Picker */}
-          <div className="flex items-center group relative">
+          <div className="flex items-center relative">
             <button 
-              onMouseDown={(e) => e.preventDefault()}
-              className="p-2 hover:bg-white rounded-xl text-slate-500 hover:text-blue-600 transition-all hover:shadow-sm flex items-center gap-1"
+              onClick={() => togglePicker('fore')}
+              className={cn(
+                "p-2 rounded-xl text-slate-500 hover:text-blue-600 transition-all hover:shadow-sm flex items-center gap-1",
+                activePicker === 'fore' ? "bg-blue-50 text-blue-600 ring-1 ring-blue-100" : "hover:bg-white"
+              )}
             >
-              <Palette size={18} />
-              <div className="w-2 h-2 rounded-full bg-slate-900 border border-white/50" />
-              <span className="text-[9px] font-bold text-slate-400">색상</span>
+              <Type size={18} />
+              <div className="w-2.5 h-2.5 rounded-full border border-white shadow-sm" style={{ backgroundColor: lastForeColor }} />
+              <span className="text-[9px] font-bold text-slate-400">글자색</span>
             </button>
-            <div className="absolute top-full left-0 mt-1 p-2 bg-white rounded-2xl shadow-xl border border-slate-100 hidden group-hover:flex gap-1 z-20 animate-in fade-in zoom-in duration-200">
-              {['#000000', '#2563eb', '#dc2626', '#16a34a', '#d97706', '#7c3aed'].map(color => (
-                <button
-                  key={color}
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => execCommand('foreColor', color)}
-                  className="w-6 h-6 rounded-lg pointer cursor-pointer hover:scale-110 transition-transform shadow-sm"
-                  style={{ backgroundColor: color }}
-                />
-              ))}
-            </div>
+            {activePicker === 'fore' && (
+              <div className="absolute top-full left-0 mt-2 p-2.5 bg-white rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] border border-slate-100 flex gap-2 z-[100] animate-in fade-in zoom-in duration-200">
+                {['#000000', '#2563eb', '#dc2626', '#16a34a', '#d97706', '#7c3aed'].map(color => (
+                  <button
+                    key={color}
+                    onClick={() => {
+                      editor.chain().focus().setColor(color).run();
+                      setLastForeColor(color);
+                      setActivePicker(null);
+                    }}
+                    className="w-9 h-9 rounded-xl cursor-pointer hover:scale-110 active:scale-95 transition-all shadow-sm flex-shrink-0 border border-slate-100"
+                    style={{ backgroundColor: color }}
+                    title={color}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Highlight Color Picker */}
-          <div className="flex items-center group relative">
+          <div className="flex items-center relative">
             <button 
-              onMouseDown={(e) => e.preventDefault()}
-              className="p-2 hover:bg-white rounded-xl text-slate-500 hover:text-amber-600 transition-all hover:shadow-sm flex items-center gap-1"
+              onClick={() => togglePicker('back')}
+              className={cn(
+                "p-2 rounded-xl text-slate-500 hover:text-amber-600 transition-all hover:shadow-sm flex items-center gap-1",
+                activePicker === 'back' ? "bg-amber-50 text-amber-600 ring-1 ring-amber-100" : "hover:bg-white"
+              )}
             >
-              <Type size={18} />
-              <div className="w-2 h-2 rounded-full bg-yellow-200 border border-white/50" />
-              <span className="text-[9px] font-bold text-slate-400">배경</span>
+              <Palette size={18} />
+              <div className="w-2.5 h-2.5 rounded-full border border-white shadow-sm" style={{ backgroundColor: lastBackColor === 'transparent' ? '#fff' : lastBackColor }} />
+              <span className="text-[9px] font-bold text-slate-400">배경색</span>
             </button>
-            <div className="absolute top-full left-0 mt-1 p-2 bg-white rounded-2xl shadow-xl border border-slate-100 hidden group-hover:flex gap-1 z-20 animate-in fade-in zoom-in duration-200">
-              {['transparent', '#fef9c3', '#dcfce7', '#dbeafe', '#f3e8ff', '#fee2e2'].map(color => (
-                <button
-                  key={color}
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => execCommand('backColor', color)}
-                  className="w-6 h-6 rounded-lg pointer cursor-pointer border border-slate-100 hover:scale-110 transition-transform shadow-sm flex items-center justify-center"
-                  style={{ backgroundColor: color }}
-                >
-                  {color === 'transparent' && <span className="text-[8px] text-slate-400">X</span>}
-                </button>
-              ))}
-            </div>
+            {activePicker === 'back' && (
+              <div className="absolute top-full left-0 mt-2 p-2.5 bg-white rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] border border-slate-100 flex gap-2 z-[100] animate-in fade-in zoom-in duration-200">
+                {['transparent', '#fef9c3', '#dcfce7', '#dbeafe', '#f3e8ff', '#fee2e2'].map(color => (
+                  <button
+                    key={color}
+                    onClick={() => {
+                      if (color === 'transparent') {
+                        editor.chain().focus().unsetHighlight().run();
+                      } else {
+                        editor.chain().focus().setHighlight({ color }).run();
+                      }
+                      setLastBackColor(color);
+                      setActivePicker(null);
+                    }}
+                    className="w-9 h-9 rounded-xl cursor-pointer border border-slate-100 hover:scale-110 active:scale-95 transition-all shadow-sm flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: color }}
+                    title={color === 'transparent' ? '지우기' : color}
+                  >
+                    {color === 'transparent' && <span className="text-[10px] text-slate-400 font-bold">X</span>}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
+          <div className="w-[1px] h-6 bg-slate-100 mx-1" />
+
           <button 
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => execCommand('underline')}
-            className="p-2 hover:bg-white rounded-xl text-slate-500 hover:text-slate-900 transition-all hover:shadow-sm"
+            onClick={() => editor.chain().focus().toggleUnderline().run()}
+            className={cn(
+              "p-2 rounded-xl transition-all hover:shadow-sm",
+              editor.isActive('underline') ? "bg-slate-100 text-slate-900 shadow-inner" : "text-slate-500 hover:bg-white hover:text-slate-900"
+            )}
             title="밑줄 (Ctrl+U)"
           >
-            <Underline size={18} />
+            <UnderlineIcon size={18} />
           </button>
 
           <div className="w-[1px] h-6 bg-slate-100 mx-1" />
           
           <button 
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => execCommand('insertUnorderedList')}
-            className="p-2 hover:bg-white rounded-xl text-slate-500 hover:text-slate-900 transition-all hover:shadow-sm"
-            title="불렛 목록 추가"
+            onClick={() => editor.chain().focus().toggleBulletList().run()}
+            className={cn(
+              "p-2 rounded-xl transition-all hover:shadow-sm",
+              editor.isActive('bulletList') ? "bg-slate-100 text-slate-900 shadow-inner" : "text-slate-500 hover:bg-white hover:text-slate-900"
+            )}
+            title="불렛 목록 (List)"
           >
             <List size={18} />
           </button>
@@ -184,20 +235,13 @@ const TipEditor = ({ categoryId, tip, uid, onAddTip, onUpdateTip }: { categoryId
         </button>
       </div>
 
-      <div 
-        ref={editorRef}
-        contentEditable
-        spellCheck="false"
-        onInput={handleInput}
-        className="w-full flex-1 bg-transparent p-8 text-base text-slate-950 font-medium leading-[2.2] outline-none overflow-y-auto custom-scrollbar min-h-[300px]"
-        style={{ caretColor: '#1d4ed8' }} // Blue 700 caret for visibility
-      />
+      <EditorContent editor={editor} />
       
       <div className="flex items-center justify-between p-4 px-8 border-t border-slate-100/80 bg-white/20">
          <span className="text-[10px] text-slate-300 font-bold uppercase tracking-widest">
-           {tip?.updatedAt && typeof (tip.updatedAt as any).toDate === 'function' 
-             ? `Last synced: ${(tip.updatedAt as any).toDate().toLocaleString()}` 
-             : "Drafting mode"}
+            {tip?.updatedAt && typeof (tip.updatedAt as any).toDate === 'function' 
+              ? `Last synced: ${(tip.updatedAt as any).toDate().toLocaleString()}` 
+              : "Drafting mode"}
          </span>
          {content !== (tip?.content || "") && (
            <span className="text-[10px] text-blue-500 font-black animate-pulse flex items-center gap-1 uppercase tracking-tighter">

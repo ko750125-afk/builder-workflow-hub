@@ -116,3 +116,36 @@
     border-color: rgba(59, 130, 246, 1);
   }
 }
+
+/* Rich Editor Styles */
+.rich-editor-content ul, .rich-editor-content ol {
+  display: block !important;
+  margin-left: 1.5rem !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+  padding-left: 0 !important;
+}
+
+.rich-editor-content ul {
+  list-style-type: disc !important;
+}
+
+.rich-editor-content ol {
+  list-style-type: decimal !important;
+}
+
+.rich-editor-content li {
+  display: list-item !important;
+  list-style-type: inherit !important;
+  margin-bottom: 0.5rem !important;
+  line-height: 1.6 !important;
+}
+
+.rich-editor-content b, .rich-editor-content strong {
+  font-weight: 800 !important;
+  color: inherit;
+}
+
+.rich-editor-content u {
+  text-decoration: underline !important;
+}

@@ -171,7 +171,7 @@ export default function Dashboard() {
     if (!user || isSyncing) return;
     
     // Default name based on status
-    const defaultName = status === 'idea' ? '새 아이디어' : '새 프로젝트';
+    const defaultName = status === 'idea' ? '새 기획' : '새 프로젝트';
     
     try {
       const newApp = await createApp(defaultName, user.uid, status);
@@ -295,7 +295,7 @@ export default function Dashboard() {
 
       {/* Main Groups (By Status) */}
       <div className="flex flex-col gap-24">
-        {(['deployed', 'testing', 'active', 'idea', 'archived'] as AppStatus[]).map(status => (
+        {(['testing', 'active', 'idea', 'deployed', 'archived'] as AppStatus[]).map(status => (
           groupedApps[status].length > 0 && (
             <section key={status} className="flex flex-col gap-12">
               <div className="flex items-center justify-between border-b border-slate-950/[0.08] pb-6 px-4 relative">
@@ -316,7 +316,7 @@ export default function Dashboard() {
                     'bg-slate-400 ring-slate-400/20'
                   )} />
                   <h2 className="text-xl font-black font-outfit tracking-widest text-slate-950 uppercase italic">
-                    {status === 'deployed' ? '배포완료' : status === 'testing' ? '테스트중' : status === 'active' ? '초기개발단계' : status === 'idea' ? '아이디어단계' : '폐기'}
+                    {status === 'deployed' ? '배포완료' : status === 'testing' ? '테스트중' : status === 'active' ? '신규개발중' : status === 'idea' ? '기획중' : '폐기'}
                   </h2>
                   <span className="px-4 py-1.5 bg-white rounded-full text-xs font-black text-slate-950 border border-slate-950/[0.1] shadow-sm ring-1 ring-slate-950/[0.02]">
                     {groupedApps[status].length}

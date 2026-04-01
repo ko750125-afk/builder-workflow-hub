@@ -18,6 +18,7 @@ export interface AppEntry {
   createdAt: any; // Firestore Timestamp
   updatedAt: any; // Firestore Timestamp
   uid?: string;
+  skillIds?: string[];
 }
 
 export interface DevTip {
